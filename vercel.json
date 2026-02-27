@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "regions": ["syd1"],
+  "functions": {
+    "pages/api/tradein/submit.ts": {
+      "maxDuration": 15
+    },
+    "pages/api/tradein/validate-code.ts": {
+      "maxDuration": 10
+    },
+    "pages/api/admin/**": {
+      "maxDuration": 15
+    },
+    "pages/api/webhooks/shopify.ts": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin",      "value": "*" },
+        { "key": "Access-Control-Allow-Methods",     "value": "GET,POST,PATCH,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers",     "value": "Content-Type, Authorization" }
+      ]
+    }
+  ]
+}
