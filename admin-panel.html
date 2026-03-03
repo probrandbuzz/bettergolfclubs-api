@@ -627,6 +627,12 @@ tr:hover td { background: #fafef9; cursor: pointer; }
       <div class="nav-item" data-view="codes" onclick="switchView('codes')">
         <span class="icon">🎟️</span> Member Codes
       </div>
+      <div class="nav-item" data-view="settings" onclick="switchView('settings')">
+        <span class="icon">⚙️</span> Settings
+      </div>
+      <div class="nav-item" data-view="password" onclick="switchView('password')">
+        <span class="icon">🔑</span> Change Password
+      </div>
     </div>
     <div class="sidebar-footer">
       <div class="admin-info">
@@ -802,6 +808,62 @@ tr:hover td { background: #fafef9; cursor: pointer; }
                 <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PASSWORD VIEW ──────────────────────── -->
+      <div class="view" id="view-password">
+        <div class="card" style="max-width:480px">
+          <div class="card-header">
+            <div class="card-title">Change Password</div>
+          </div>
+          <div class="card-body">
+            <div id="pw-alert" style="display:none;margin-bottom:16px"></div>
+            <div class="form-row">
+              <label class="form-label">Current Password</label>
+              <input type="password" class="form-input" id="pw-current" placeholder="••••••••">
+            </div>
+            <div class="form-row">
+              <label class="form-label">New Password</label>
+              <input type="password" class="form-input" id="pw-new" placeholder="Min 8 characters">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Confirm New Password</label>
+              <input type="password" class="form-input" id="pw-confirm" placeholder="Repeat new password">
+            </div>
+            <button class="btn btn-primary" id="pw-btn" onclick="changePassword()" style="width:100%;justify-content:center;height:40px">
+              Update Password
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS VIEW ──────────────────────── -->
+      <div class="view" id="view-settings">
+        <div style="max-width:480px">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Change Password</div>
+            </div>
+            <div class="card-body">
+              <div id="pw-alert" style="display:none;margin-bottom:16px"></div>
+              <div class="form-row">
+                <label class="form-label">Current Password</label>
+                <input type="password" class="form-input" id="pw-current" placeholder="••••••••" autocomplete="current-password">
+              </div>
+              <div class="form-row">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-input" id="pw-new" placeholder="Min 8 characters" autocomplete="new-password">
+              </div>
+              <div class="form-row">
+                <label class="form-label">Confirm New Password</label>
+                <input type="password" class="form-input" id="pw-confirm" placeholder="Repeat new password" autocomplete="new-password">
+              </div>
+              <button class="btn btn-primary" id="pw-btn" onclick="changePassword()" style="width:100%;justify-content:center">
+                Update Password
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1078,7 +1140,7 @@ function switchView(name) {
   ge('view-' + name).classList.add('active');
   document.querySelector(`[data-view="${name}"]`).classList.add('active');
 
-  const titles = { dashboard:'Dashboard', submissions:'Submissions', pricing:'Pricing', codes:'Member Codes' };
+  const titles = { dashboard:'Dashboard', submissions:'Submissions', pricing:'Pricing', codes:'Member Codes', password:'Change Password' };
   ge('topbarTitle').textContent = titles[name] || name;
 
   if (name === 'submissions') loadSubmissions();
@@ -1597,6 +1659,118 @@ async function toggleCode(id, active) {
     toast(active ? 'Code activated' : 'Code deactivated', 'success');
     loadCodes();
   } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── CHANGE PASSWORD ───────────────────────────────────────
+async function changePassword() {
+  const current = ge('pw-current').value;
+  const newPw   = ge('pw-new').value;
+  const confirm = ge('pw-confirm').value;
+  const alert   = ge('pw-alert');
+  const btn     = ge('pw-btn');
+
+  // Reset
+  alert.style.display = 'none';
+
+  // Validate
+  if (!current || !newPw || !confirm) {
+    alert.className = 'alert alert-warn';
+    alert.textContent = 'Please fill in all fields.';
+    alert.style.display = 'flex'; return;
+  }
+  if (newPw.length < 8) {
+    alert.className = 'alert alert-warn';
+    alert.textContent = 'New password must be at least 8 characters.';
+    alert.style.display = 'flex'; return;
+  }
+  if (newPw !== confirm) {
+    alert.className = 'alert alert-warn';
+    alert.textContent = 'Passwords do not match.';
+    alert.style.display = 'flex'; return;
+  }
+
+  btn.textContent = 'Updating…'; btn.disabled = true;
+
+  try {
+    await api('/api/admin/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword: current, newPassword: newPw }),
+    });
+
+    // Clear fields
+    ge('pw-current').value = '';
+    ge('pw-new').value = '';
+    ge('pw-confirm').value = '';
+
+    alert.className = 'alert alert-success';
+    alert.textContent = '✓ Password updated successfully.';
+    alert.style.display = 'flex';
+    toast('Password updated', 'success');
+  } catch(e) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = e.message || 'Failed to update password.';
+    alert.style.display = 'flex';
+  } finally {
+    btn.textContent = 'Update Password'; btn.disabled = false;
+  }
+}
+
+// ── CHANGE PASSWORD ───────────────────────────────────────
+async function changePassword() {
+  const current = ge('pw-current').value;
+  const newPw   = ge('pw-new').value;
+  const confirm = ge('pw-confirm').value;
+  const alert   = ge('pw-alert');
+  const btn     = ge('pw-btn');
+
+  // Clear previous alert
+  alert.style.display = 'none';
+
+  // Validate
+  if (!current || !newPw || !confirm) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = 'Please fill in all fields.';
+    alert.style.display = 'flex';
+    return;
+  }
+  if (newPw.length < 8) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = 'New password must be at least 8 characters.';
+    alert.style.display = 'flex';
+    return;
+  }
+  if (newPw !== confirm) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = 'New passwords do not match.';
+    alert.style.display = 'flex';
+    return;
+  }
+
+  btn.textContent = 'Updating…';
+  btn.disabled = true;
+
+  try {
+    await api('/api/admin/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword: current, newPassword: newPw }),
+    });
+
+    // Clear fields
+    ge('pw-current').value = '';
+    ge('pw-new').value = '';
+    ge('pw-confirm').value = '';
+
+    alert.className = 'alert alert-success';
+    alert.textContent = '✓ Password updated successfully.';
+    alert.style.display = 'flex';
+  } catch(e) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = e.message || 'Failed to update password.';
+    alert.style.display = 'flex';
+  } finally {
+    btn.textContent = 'Update Password';
+    btn.disabled = false;
+  }
 }
 
 // ── SECURITY: escape HTML to prevent XSS ──────────────────
