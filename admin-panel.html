@@ -1318,15 +1318,21 @@ function buildActionBlock(s) {
   if (s.status === 'pending' || s.status === 'reviewing') {
     if (s.payment_type === 'credit') {
       html += `
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-success btn-sm" onclick="approveSubmission('${id}', true)">✓ Approve + Issue Gift Card</button>
-          <button class="btn btn-secondary btn-sm" onclick="approveSubmission('${id}', false)">✓ Approve + Discount Code</button>
+        <div style="background:var(--success-bg);border:1px solid #bbf7d0;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:12px;font-weight:600;color:var(--success)">✓ Approve — Store Credit</div>
+          <div style="font-size:12px;color:var(--muted)">Create a discount code in <a href="https://admin.shopify.com/store/0912ad-c2/discounts" target="_blank" style="color:var(--green)">Shopify Admin → Discounts</a>, then enter it below.</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="form-input mono" id="discountCode" placeholder="e.g. TRADEIN-ABC123" style="flex:1;min-width:180px;text-transform:uppercase">
+            <button class="btn btn-success btn-sm" onclick="approveSubmission('${id}')">✓ Approve + Send to Customer</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
           <button class="btn btn-danger btn-sm" onclick="rejectSubmission('${id}')">✗ Reject</button>
         </div>`;
     } else {
       html += `
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-success btn-sm" onclick="approveSubmission('${id}', false)">✓ Approve Cash Payment</button>
+          <button class="btn btn-success btn-sm" onclick="approveSubmission('${id}')">✓ Approve Cash Payment</button>
           <button class="btn btn-danger btn-sm" onclick="rejectSubmission('${id}')">✗ Reject</button>
         </div>`;
     }
@@ -1359,13 +1365,24 @@ async function updateStatus(id) {
   } catch(e) { toast(e.message, 'error'); }
 }
 
-async function approveSubmission(id, useGiftCard) {
+async function approveSubmission(id) {
+  const codeInput = ge('discountCode');
+  const discountCode = codeInput ? codeInput.value.trim().toUpperCase() : '';
+  
+  // For credit submissions, require a discount code
+  const isCreditSub = document.querySelector('#subModalBody .badge-credit') !== null;
+  if (isCreditSub && !discountCode) {
+    toast('Please enter a discount code first', 'error');
+    if (codeInput) codeInput.focus();
+    return;
+  }
+
   try {
     const s = await api('/api/admin/submission/' + id, {
       method: 'PATCH',
-      body: JSON.stringify({ action: 'approve', id, useGiftCard }),
+      body: JSON.stringify({ action: 'approve', id, useGiftCard: false, manualDiscountCode: discountCode || undefined }),
     });
-    toast('Approved! ' + (s.gift_card_code ? 'Gift card: ' + s.gift_card_code : s.discount_code ? 'Discount: ' + s.discount_code : 'Email sent.'), 'success');
+    toast('Approved! Customer notified by email.', 'success');
     closeModal('subModal');
     loadSubmissions(); loadDashboard();
   } catch(e) { toast(e.message, 'error'); }

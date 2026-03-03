@@ -1,6 +1,6 @@
 const STORE   = process.env.SHOPIFY_STORE_DOMAIN!;
 const TOKEN   = process.env.SHOPIFY_ADMIN_API_TOKEN!;
-const API_VER = '2024-10';
+const API_VER = '2025-01';
 const BASE    = `https://${STORE}/admin/api/${API_VER}`;
 
 async function shopifyFetch(method: string, path: string, body?: object) {
