@@ -60,14 +60,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Failed to save submission. Please try again.' });
   }
 
-  // ─── 4. Send emails (non-blocking) ──────────────────────────
+  // ─── 4. Send emails (awaited so they complete before function exits) ──
   const totalVal = d.paymentType === 'cash' ? d.totalCash : d.totalCredit;
-  Promise.all([
-    sendConfirmation({ subs, paymentType: d.paymentType, totalVal })
-      .catch(e => console.error('[email] confirmation failed:', e)),
-    sendAdminAlert({ subs, paymentType: d.paymentType, totalVal })
-      .catch(e => console.error('[email] admin alert failed:', e)),
+  const emailResults = await Promise.allSettled([
+    sendConfirmation({ subs, paymentType: d.paymentType, totalVal }),
+    sendAdminAlert({ subs, paymentType: d.paymentType, totalVal }),
   ]);
+
+  emailResults.forEach((result, i) => {
+    const name = i === 0 ? 'confirmation' : 'admin alert';
+    if (result.status === 'rejected') {
+      console.error(`[email] ${name} failed:`, result.reason);
+    } else {
+      console.log(`[email] ${name} sent successfully`);
+    }
+  });
 
   // ─── 5. Respond ─────────────────────────────────────────────
   const first = subs[0];
