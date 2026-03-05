@@ -1,9 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { withAdminAuth } from '@/lib/auth';
-import { supabaseAdmin } from '@/lib/supabase';
-import { createGiftCard, createDiscountCode } from '@/lib/shopify';
-import { sendApprovalCredit, sendApprovalCash, sendRejection, sendShippingLabel } from '@/lib/email';
-import { UpdateStatusSchema, ApproveSchema, AttachLabelSchema } from '@/lib/schemas';
+import { withAdminAuth } from '../../../../lib/auth';
+import { supabaseAdmin } from '../../../../lib/supabase';
+import { sendApprovalCredit, sendApprovalCash, sendRejection, sendShippingLabel } from '../../../../lib/email';
+import { UpdateStatusSchema, ApproveSchema, AttachLabelSchema } from '../../../../lib/schemas';
 
 export default withAdminAuth(async function handler(req, res, session) {
   const { id } = req.query;
@@ -51,6 +50,7 @@ export default withAdminAuth(async function handler(req, res, session) {
       const parsed = ApproveSchema.safeParse({ ...req.body, id });
       if (!parsed.success) return res.status(400).json({ error: parsed.error.issues });
 
+      // Fetch submission
       const { data: sub } = await supabaseAdmin
         .from('trade_in_submissions')
         .select('*')
@@ -65,32 +65,15 @@ export default withAdminAuth(async function handler(req, res, session) {
         reviewed_at: new Date().toISOString(),
       };
 
+      // Issue store credit if payment type is credit
       if (sub.payment_type === 'credit') {
-        const note = `Trade-in: ${sub.brand} ${sub.model} — ${sub.customer_email}`;
-        const amount = sub.quoted_credit || 0;
-
-        try {
-          if (parsed.data.useGiftCard) {
-            const gc = await createGiftCard(amount, note);
-            updates.gift_card_code = gc.code;
-            updates.gift_card_id   = String(gc.id);
-            await sendApprovalCredit(sub, gc.code);
-          } else if (req.body.manualDiscountCode) {
-            // Admin manually created the code in Shopify and pasted it in
-            const manualCode = String(req.body.manualDiscountCode).trim().toUpperCase();
-            updates.discount_code = manualCode;
-            await sendApprovalCredit(sub, manualCode);
-          } else {
-            const dc = await createDiscountCode(amount, note);
-            updates.discount_code = dc.code;
-            await sendApprovalCredit(sub, dc.code);
-          }
-        } catch (shopifyErr) {
-          console.error('[approve] Shopify error:', shopifyErr);
-          updates.admin_notes = `[Shopify error — issue credit manually] ${parsed.data.adminNotes || ''}`;
-          await sendApprovalCredit(sub, 'MANUAL-ISSUE');
-        }
+        // Manual discount code provided by admin
+        const manualCode = (req.body.manualDiscountCode || '').toString().trim().toUpperCase();
+        const creditCode = manualCode || 'PENDING-MANUAL';
+        updates.discount_code = creditCode;
+        await sendApprovalCredit(sub, creditCode);
       } else {
+        // Cash — no Shopify action needed
         await sendApprovalCash(sub);
       }
 
