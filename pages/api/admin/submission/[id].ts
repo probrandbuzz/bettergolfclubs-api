@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAdminAuth } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { createGiftCard, createDiscountCode } from '@/lib/shopify';
-import { sendApprovalCredit, sendApprovalCash, sendRejection, sendShippingLabel } from '@/lib/email';
+import { sendApprovalCredit, sendApprovalCash, sendRejection, sendShippingLabel, sendReviewing, sendShipped, sendComplete } from '@/lib/email';
 import { UpdateStatusSchema, ApproveSchema, AttachLabelSchema } from '@/lib/schemas';
 
 export default withAdminAuth(async function handler(req, res, session) {
@@ -30,6 +30,14 @@ export default withAdminAuth(async function handler(req, res, session) {
       const parsed = UpdateStatusSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ error: parsed.error.issues });
 
+      // Fetch submission first so we can send emails on status changes
+      const { data: sub } = await supabaseAdmin
+        .from('trade_in_submissions')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (!sub) return res.status(404).json({ error: 'Not found' });
+
       const { data, error } = await supabaseAdmin
         .from('trade_in_submissions')
         .update({
@@ -43,6 +51,29 @@ export default withAdminAuth(async function handler(req, res, session) {
         .single();
 
       if (error) return res.status(500).json({ error: error.message });
+
+      // Send email notification when status changes
+      const newStatus  = parsed.data.status;
+      const prevStatus = sub.status;
+      if (newStatus !== prevStatus) {
+        if (newStatus === 'reviewing') {
+          await sendReviewing(sub).catch(console.error);
+        } else if (newStatus === 'approved') {
+          if (sub.payment_type === 'credit') {
+            const code = sub.discount_code || sub.gift_card_code || 'PENDING-MANUAL';
+            await sendApprovalCredit(sub, code).catch(console.error);
+          } else {
+            await sendApprovalCash(sub).catch(console.error);
+          }
+        } else if (newStatus === 'rejected') {
+          await sendRejection(sub, parsed.data.adminNotes || '').catch(console.error);
+        } else if (newStatus === 'shipped') {
+          await sendShipped(sub).catch(console.error);
+        } else if (newStatus === 'complete') {
+          await sendComplete(sub).catch(console.error);
+        }
+      }
+
       return res.status(200).json(data);
     }
 

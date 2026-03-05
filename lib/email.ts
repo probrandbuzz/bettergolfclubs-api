@@ -410,3 +410,140 @@ export async function sendRejection(sub: SubRow, reason?: string) {
     html:    baseTemplate(content),
   });
 }
+
+// ─── 7. REVIEWING ─────────────────────────────────────────────
+export async function sendReviewing(sub: SubRow) {
+  const content = `
+    <p style="color:#374151;font-size:15px;margin:0 0 20px">Hi ${sub.customer_name},</p>
+    <p style="color:#374151;font-size:15px;margin:0 0 24px">
+      Good news — our team has started reviewing your trade-in request.
+      We'll be in touch shortly with the outcome.
+    </p>
+
+    <div style="background:#f8f9fa;border-radius:10px;padding:18px;margin-bottom:24px">
+      ${row('Club', `${sub.brand} ${sub.model}`)}
+      ${row('Reference', ref(sub))}
+      ${row('Status', 'Under Review')}
+    </div>
+
+    <div style="background:#edf5f0;border-left:4px solid ${GREEN};
+                border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:24px">
+      <strong style="color:${GREEN};font-size:13px">What happens next?</strong>
+      <p style="color:#374151;font-size:13px;margin:6px 0 0">
+        Once our team has reviewed your club, you'll receive an email confirming
+        whether it's been approved along with your payment details.
+        This usually takes <strong>1 business day</strong>.
+      </p>
+    </div>
+
+    <p style="color:#6b7280;font-size:13px;margin:0">
+      Questions? <a href="mailto:${ADMIN_EMAIL}" style="color:${GREEN}">${ADMIN_EMAIL}</a>
+    </p>`;
+
+  await transporter.sendMail({
+    from:    `"${BRAND_NAME} Trade-In" <${FROM}>`,
+    to:      sub.customer_email,
+    subject: `We're Reviewing Your Trade-In — ${sub.brand} ${sub.model}`,
+    html:    baseTemplate(content),
+  });
+}
+
+// ─── 8. SHIPPED (club received, being processed) ──────────────
+export async function sendShipped(sub: SubRow) {
+  const isCredit = sub.payment_type === 'credit';
+  const content = `
+    <p style="color:#374151;font-size:15px;margin:0 0 20px">Hi ${sub.customer_name},</p>
+    <p style="color:#374151;font-size:15px;margin:0 0 24px">
+      Great news — we've received your <strong>${sub.brand} ${sub.model}</strong>
+      and it's now being inspected by our team.
+    </p>
+
+    <div style="background:#f8f9fa;border-radius:10px;padding:18px;margin-bottom:24px">
+      ${row('Club', `${sub.brand} ${sub.model}`)}
+      ${row('Reference', ref(sub))}
+      ${row('Payment Type', isCredit ? 'Store Credit' : 'Cash')}
+      ${isCredit
+        ? row('Credit Value', `${sub.quoted_credit ? '$' + Math.round(sub.quoted_credit).toLocaleString() : 'As quoted'}`)
+        : row('Cash Payment', `${sub.quoted_cash ? '$' + Math.round(sub.quoted_cash).toLocaleString() : 'As quoted'}`)
+      }
+    </div>
+
+    <div style="background:#edf5f0;border-left:4px solid ${GREEN};
+                border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:24px">
+      <strong style="color:${GREEN};font-size:13px">Almost there!</strong>
+      <p style="color:#374151;font-size:13px;margin:6px 0 0">
+        We're inspecting your club now. Once complete, your
+        ${isCredit ? 'store credit code will be emailed to you' : 'cash payment will be processed to your account'}.
+        This usually takes <strong>1–2 business days</strong>.
+      </p>
+    </div>
+
+    <p style="color:#6b7280;font-size:13px;margin:0">
+      Questions? <a href="mailto:${ADMIN_EMAIL}" style="color:${GREEN}">${ADMIN_EMAIL}</a>
+    </p>`;
+
+  await transporter.sendMail({
+    from:    `"${BRAND_NAME} Trade-In" <${FROM}>`,
+    to:      sub.customer_email,
+    subject: `We've Received Your Club — ${sub.brand} ${sub.model} (${ref(sub)})`,
+    html:    baseTemplate(content),
+  });
+}
+
+// ─── 9. COMPLETE ──────────────────────────────────────────────
+export async function sendComplete(sub: SubRow) {
+  const isCredit = sub.payment_type === 'credit';
+  const code     = sub.discount_code || sub.gift_card_code || null;
+
+  const content = `
+    <p style="color:#374151;font-size:15px;margin:0 0 20px">Hi ${sub.customer_name},</p>
+    <p style="color:#374151;font-size:15px;margin:0 0 24px">
+      Your trade-in is now <strong style="color:${GREEN}">complete!</strong>
+      ${isCredit
+        ? 'Your store credit is ready to use.'
+        : 'Your cash payment has been processed.'}
+    </p>
+
+    <div style="background:#f8f9fa;border-radius:10px;padding:18px;margin-bottom:24px">
+      ${row('Club', `${sub.brand} ${sub.model}`)}
+      ${row('Reference', ref(sub))}
+      ${isCredit
+        ? row('Store Credit', `$${sub.quoted_credit ? Math.round(sub.quoted_credit).toLocaleString() : '—'}`)
+        : row('Cash Payment', `$${sub.quoted_cash ? Math.round(sub.quoted_cash).toLocaleString() : '—'}`)}
+      ${code ? row('Credit Code', code) : ''}
+    </div>
+
+    ${isCredit && code ? `
+    <div style="background:${GREEN};border-radius:12px;padding:22px;
+                text-align:center;margin-bottom:24px">
+      <div style="color:rgba(255,255,255,.65);font-size:11px;font-weight:700;
+                  letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">
+        Your Store Credit Code
+      </div>
+      <div style="color:#fff;font-size:28px;font-weight:800;
+                  letter-spacing:5px;font-family:monospace">
+        ${code}
+      </div>
+    </div>` : ''}
+
+    <div style="background:#edf5f0;border-left:4px solid ${GREEN};
+                border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:24px">
+      <strong style="color:${GREEN};font-size:13px">Thank you!</strong>
+      <p style="color:#374151;font-size:13px;margin:6px 0 0">
+        Thanks for trading in with ${BRAND_NAME}. We hope to see you again soon —
+        check out our latest range at
+        <a href="${STORE_URL}" style="color:${GREEN}">${STORE_URL.replace('https://', '')}</a>.
+      </p>
+    </div>
+
+    <p style="color:#6b7280;font-size:13px;margin:0">
+      Questions? <a href="mailto:${ADMIN_EMAIL}" style="color:${GREEN}">${ADMIN_EMAIL}</a>
+    </p>`;
+
+  await transporter.sendMail({
+    from:    `"${BRAND_NAME} Trade-In" <${FROM}>`,
+    to:      sub.customer_email,
+    subject: `Trade-In Complete — ${sub.brand} ${sub.model} (${ref(sub)})`,
+    html:    baseTemplate(content),
+  });
+}
