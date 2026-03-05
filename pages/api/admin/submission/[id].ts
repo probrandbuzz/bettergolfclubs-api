@@ -75,6 +75,10 @@ export default withAdminAuth(async function handler(req, res, session) {
             updates.gift_card_code = gc.code;
             updates.gift_card_id   = String(gc.id);
             await sendApprovalCredit(sub, gc.code);
+          } else if (parsed.data.manualDiscountCode) {
+            // Admin manually created the code in Shopify and pasted it in
+            updates.discount_code = parsed.data.manualDiscountCode;
+            await sendApprovalCredit(sub, parsed.data.manualDiscountCode);
           } else {
             const dc = await createDiscountCode(amount, note);
             updates.discount_code = dc.code;
