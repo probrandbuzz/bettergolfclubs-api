@@ -21,15 +21,15 @@ export const pricingHandler = withAdminAuth(async function(req, res, session) {
     const { data, error } = await supabaseAdmin
       .from('trade_in_pricing')
       .upsert({
-        club_type:      d.clubType,
-        brand:          d.brand,
-        model:          d.model,
-        price_new:      d.priceNew,
-        price_above_avg:d.priceAboveAvg,
-        price_avg:      d.priceAvg,
-        price_below_avg:d.priceBelowAvg,
-        active:         d.active,
-        updated_by:     session.user.email,
+        club_type:       d.clubType,
+        brand:           d.brand,
+        model:           d.model,
+        price_new:       d.priceNew,
+        price_above_avg: d.priceAboveAvg,
+        price_avg:       d.priceAvg,
+        price_below_avg: d.priceBelowAvg,
+        active:          d.active,
+        updated_by:      session.user.email,
       }, { onConflict: 'club_type,brand,model' })
       .select().single();
     if (error) return res.status(500).json({ error: error.message });
@@ -37,7 +37,17 @@ export const pricingHandler = withAdminAuth(async function(req, res, session) {
   }
 
   if (req.method === 'DELETE') {
-    const { id } = req.query;
+    const { id, hard } = req.query;
+    if (hard === 'true') {
+      // Hard delete — permanently remove the row
+      const { error } = await supabaseAdmin
+        .from('trade_in_pricing')
+        .delete()
+        .eq('id', id);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ ok: true, deleted: true });
+    }
+    // Soft delete — mark inactive
     const { error } = await supabaseAdmin
       .from('trade_in_pricing')
       .update({ active: false })
@@ -97,27 +107,24 @@ export const codesHandler = withAdminAuth(async function(req, res) {
 export const statsHandler = withAdminAuth(async function(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const [totals, recent, byStatus, byType] = await Promise.all([
-    // Total counts
+  const [totals, recent, byType] = await Promise.all([
+    // Total counts + status/payment breakdown
     supabaseAdmin.from('trade_in_submissions')
-      .select('status, payment_type', { count: 'exact' }),
+      .select('status, payment_type, club_type', { count: 'exact' }),
 
-    // Last 7 days
+    // 10 most recent submissions
     supabaseAdmin.from('trade_in_submissions')
       .select('id, created_at, status, customer_name, brand, model, payment_type, quoted_cash, quoted_credit')
       .order('created_at', { ascending: false })
       .limit(10),
 
-    // By status
-    supabaseAdmin.rpc('count_by_status').catch(() => ({ data: null })),
-
-    // By club type
+    // Club type distribution
     supabaseAdmin.from('trade_in_submissions')
       .select('club_type')
       .order('club_type'),
   ]);
 
-  const subs = totals.data || [];
+  const subs     = totals.data || [];
   const pending  = subs.filter(s => s.status === 'pending').length;
   const approved = subs.filter(s => s.status === 'approved' || s.status === 'complete').length;
   const credit   = subs.filter(s => s.payment_type === 'credit').length;
@@ -126,17 +133,18 @@ export const statsHandler = withAdminAuth(async function(req, res) {
   // Club type distribution
   const typeCount: Record<string, number> = {};
   for (const s of subs) {
-    typeCount[(s as any).club_type] = (typeCount[(s as any).club_type] || 0) + 1;
+    const t = (s as any).club_type as string;
+    typeCount[t] = (typeCount[t] || 0) + 1;
   }
 
   return res.status(200).json({
-    total:   subs.length,
+    total:    subs.length,
     pending,
     approved,
     credit,
     cash,
-    recent:  recent.data || [],
-    byType:  typeCount,
+    recent:   recent.data  || [],
+    byType:   typeCount,
   });
 });
 
