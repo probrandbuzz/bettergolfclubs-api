@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Better Golf Clubs — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:       #124c33;
+  --green-mid:   #1a6b47;
+  --green-light: #edf5f0;
+  --green-bd:    #b6d9c6;
+  --gold:        #c9a84c;
+  --bg:          #f4f5f4;
+  --surface:     #ffffff;
+  --border:      #e4e6e3;
+  --text:        #1a1f1b;
+  --muted:       #6b7570;
+  --danger:      #c0392b;
+  --danger-bg:   #fdf2f2;
+  --warn:        #d97706;
+  --warn-bg:     #fffbeb;
+  --info:        #2563eb;
+  --info-bg:     #eff6ff;
+  --success:     #16a34a;
+  --success-bg:  #f0fdf4;
+  --radius:      10px;
+  --shadow:      0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+  --shadow-md:   0 4px 24px rgba(0,0,0,.10);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── LAYOUT ───────────────────────────────────────────────── */
+#app { display: flex; min-height: 100vh; }
+
+/* ── SIDEBAR ──────────────────────────────────────────────── */
+#sidebar {
+  width: 220px;
+  min-height: 100vh;
+  background: var(--green);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform .2s;
+}
+
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.sidebar-logo .brand {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.sidebar-logo .sub {
+  color: rgba(255,255,255,.5);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  color: rgba(255,255,255,.65);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all .15s;
+  border-left: 3px solid transparent;
+  user-select: none;
+}
+.nav-item:hover { color: #fff; background: rgba(255,255,255,.07); }
+.nav-item.active {
+  color: #fff;
+  background: rgba(255,255,255,.1);
+  border-left-color: var(--gold);
+}
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--gold);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+.admin-info {
+  color: rgba(255,255,255,.5);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.admin-info strong { color: rgba(255,255,255,.8); font-size: 12px; }
+.btn-logout {
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 6px;
+  color: rgba(255,255,255,.7);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-logout:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+/* ── MAIN CONTENT ─────────────────────────────────────────── */
+#main {
+  margin-left: 220px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+.content { padding: 24px 28px; flex: 1; }
+
+/* ── CARDS & PANELS ───────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.card-body { padding: 20px; }
+
+/* ── STAT TILES ───────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.stat-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.stat-tile.highlight .stat-value { color: var(--green); }
+.stat-tile.warn .stat-value { color: var(--warn); }
+
+/* ── TABLE ────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--muted);
+  background: #fafafa;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafef9; cursor: pointer; }
+.tr-no-hover:hover td { background: transparent; cursor: default; }
+
+/* ── BADGES ───────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-pending   { background: var(--warn-bg);    color: var(--warn);    }
+.badge-reviewing { background: var(--info-bg);    color: var(--info);    }
+.badge-approved  { background: var(--success-bg); color: var(--success); }
+.badge-rejected  { background: var(--danger-bg);  color: var(--danger);  }
+.badge-shipped   { background: #f0f4ff;            color: #4f46e5;        }
+.badge-complete  { background: var(--green-light); color: var(--green);   }
+.badge-credit    { background: var(--green-light); color: var(--green);   }
+.badge-cash      { background: #f0f9ff;            color: #0369a1;        }
+
+/* ── FILTERS BAR ──────────────────────────────────────────── */
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: #fafafa;
+}
+.filter-select, .filter-input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border-color .15s;
+}
+.filter-select:focus, .filter-input:focus { border-color: var(--green); }
+.filter-input { width: 220px; }
+.filter-input::placeholder { color: var(--muted); }
+
+/* ── BUTTONS ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all .15s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn-primary   { background: var(--green); color: #fff; border-color: var(--green); }
+.btn-primary:hover { background: var(--green-mid); }
+.btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+.btn-secondary:hover { background: #f4f5f4; }
+.btn-danger    { background: var(--danger-bg); color: var(--danger); border-color: #f5c6c2; }
+.btn-danger:hover { background: #fce8e6; }
+.btn-success   { background: var(--success-bg); color: var(--success); border-color: #bbf7d0; }
+.btn-success:hover { background: #dcfce7; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── PAGINATION ───────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: #fafafa;
+}
+.page-info { font-size: 12px; color: var(--muted); margin-right: auto; }
+
+/* ── FORMS ────────────────────────────────────────────────── */
+.form-row { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border-color .15s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(18,76,51,.08);
+}
+.form-textarea { resize: vertical; min-height: 80px; }
+
+/* ── MODAL ────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(8px);
+  transition: transform .2s;
+}
+.modal-overlay.show .modal { transform: translateY(0); }
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title { font-size: 15px; font-weight: 600; }
+.modal-close {
+  background: none; border: none;
+  font-size: 20px; color: var(--muted);
+  cursor: pointer; line-height: 1;
+  padding: 2px 6px; border-radius: 4px;
+}
+.modal-close:hover { background: var(--bg); color: var(--text); }
+.modal-body { padding: 20px 24px; }
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── DETAIL ROWS ──────────────────────────────────────────── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.detail-row {
+  display: contents;
+}
+.detail-label, .detail-value {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.detail-label {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12px;
+  background: #fafafa;
+}
+.detail-value { color: var(--text); }
+.detail-row:last-child .detail-label,
+.detail-row:last-child .detail-value { border-bottom: none; }
+.detail-full {
+  grid-column: 1 / -1;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.detail-full:last-child { border-bottom: none; }
+.detail-full .detail-label { background: none; padding: 0 0 4px; display: block; }
+
+/* ── SECTION TITLE ────────────────────────────────────────── */
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  margin-top: 4px;
+}
+
+/* ── ALERT BOXES ──────────────────────────────────────────── */
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.alert-success { background: var(--success-bg); color: var(--success); border: 1px solid #bbf7d0; }
+.alert-danger  { background: var(--danger-bg);  color: var(--danger);  border: 1px solid #fecaca; }
+.alert-warn    { background: var(--warn-bg);    color: var(--warn);    border: 1px solid #fde68a; }
+
+/* ── LOGIN SCREEN ─────────────────────────────────────────── */
+#login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green);
+  background-image: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,.04) 0%, transparent 60%);
+}
+.login-card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 48px rgba(0,0,0,.3);
+}
+.login-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.login-logo .brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.login-logo .sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.login-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  padding: 10px 14px;
+  border-radius: 7px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  border: 1px solid #fecaca;
+  display: none;
+}
+.login-error.show { display: block; }
+
+/* ── EMPTY STATE ──────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+.empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* ── LOADER ───────────────────────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(0,0,0,.1);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-row td {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+}
+
+/* ── MONO ─────────────────────────────────────────────────── */
+.mono {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+}
+
+/* ── TOAST ────────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: #1a1f1b;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  z-index: 999;
+  transform: translateY(8px);
+  opacity: 0;
+  transition: all .2s;
+  pointer-events: none;
+  max-width: 320px;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+#toast.success { background: var(--green); }
+#toast.error   { background: var(--danger); }
+
+/* ── VIEWS ────────────────────────────────────────────────── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── RESPONSIVE ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ─────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="brand-name">Better Golf Clubs</div>
+      <div class="sub">Admin Panel</div>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <div class="form-row">
+      <label class="form-label">Email</label>
+      <input type="email" id="loginEmail" class="form-input" placeholder="admin@bettergolfclubs.shop" autocomplete="email">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Password</label>
+      <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;height:40px" onclick="doLogin()" id="loginBtn">
+      Sign In
+    </button>
+  </div>
+</div>
+
+<!-- ── APP SHELL ─────────────────────────────────────── -->
+<div id="app" style="display:none">
+
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">Better Golf Clubs</div>
+      <div class="sub">Admin Panel</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-item active" data-view="dashboard" onclick="switchView('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-view="submissions" onclick="switchView('submissions')">
+        <span class="icon">📋</span> Submissions
+        <span class="nav-badge" id="pendingBadge" style="display:none"></span>
+      </div>
+      <div class="nav-item" data-view="pricing" onclick="switchView('pricing')">
+        <span class="icon">💰</span> Pricing
+      </div>
+      <div class="nav-item" data-view="codes" onclick="switchView('codes')">
+        <span class="icon">🎟️</span> Member Codes
+      </div>
+      <div class="nav-item" data-view="settings" onclick="switchView('settings')">
+        <span class="icon">⚙️</span> Settings
+      </div>
+      <div class="nav-item" data-view="password" onclick="switchView('password')">
+        <span class="icon">🔑</span> Change Password
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="admin-info">
+        <strong id="adminName">Admin</strong><br>
+        <span id="adminEmail">—</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div id="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </div>
+    <div class="content">
+
+      <!-- ── DASHBOARD VIEW ────────────────────── -->
+      <div class="view active" id="view-dashboard">
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-tile"><div class="stat-label">Total</div><div class="stat-value" id="st-total">—</div></div>
+          <div class="stat-tile warn"><div class="stat-label">Pending</div><div class="stat-value" id="st-pending">—</div></div>
+          <div class="stat-tile highlight"><div class="stat-label">Approved</div><div class="stat-value" id="st-approved">—</div></div>
+          <div class="stat-tile"><div class="stat-label">Store Credit</div><div class="stat-value" id="st-credit">—</div></div>
+          <div class="stat-tile"><div class="stat-label">Cash</div><div class="stat-value" id="st-cash">—</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Submissions</div>
+            <button class="btn btn-secondary btn-sm" onclick="switchView('submissions')">View All →</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ref</th>
+                  <th>Customer</th>
+                  <th>Club</th>
+                  <th>Value</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="recentTbody">
+                <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUBMISSIONS VIEW ──────────────────── -->
+      <div class="view" id="view-submissions">
+        <div class="card">
+          <div class="filters">
+            <input type="text" class="filter-input" id="srchInput" placeholder="🔍  Search name, email, club…" oninput="debounceLoad()">
+            <select class="filter-select" id="srchStatus" onchange="loadSubmissions()">
+              <option value="">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="reviewing">Reviewing</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="shipped">Shipped</option>
+              <option value="complete">Complete</option>
+            </select>
+            <select class="filter-select" id="srchPayment" onchange="loadSubmissions()">
+              <option value="">All Types</option>
+              <option value="credit">Store Credit</option>
+              <option value="cash">Cash</option>
+            </select>
+            <select class="filter-select" id="srchClub" onchange="loadSubmissions()">
+              <option value="">All Club Types</option>
+              <option>Driver</option>
+              <option>Fairway Wood</option>
+              <option>Hybrid</option>
+              <option>Iron Set</option>
+              <option>Single Iron</option>
+              <option>Wedge</option>
+              <option>Putter</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Clear</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ref</th>
+                  <th>Customer</th>
+                  <th>Club</th>
+                  <th>Condition</th>
+                  <th>Value</th>
+                  <th>Type</th>
+                  <th>Member</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="subsTbody">
+                <tr class="loading-row"><td colspan="9"><span class="spinner"></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div class="page-info" id="pageInfo">—</div>
+            <button class="btn btn-secondary btn-sm" id="btnPrev" onclick="changePage(-1)" disabled>← Prev</button>
+            <button class="btn btn-secondary btn-sm" id="btnNext" onclick="changePage(1)" disabled>Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PRICING VIEW ──────────────────────── -->
+      <div class="view" id="view-pricing">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Club Pricing</div>
+            <button class="btn btn-primary btn-sm" onclick="openPricingModal()">+ Add / Edit Club</button>
+          </div>
+          <div class="filters">
+            <input type="text" class="filter-input" id="priceSearch" placeholder="🔍  Search brand or model…" oninput="filterPricing()">
+            <select class="filter-select" id="priceClubFilter" onchange="filterPricing()">
+              <option value="">All Club Types</option>
+              <option>Driver</option><option>Fairway Wood</option><option>Hybrid</option>
+              <option>Iron Set</option><option>Single Iron</option><option>Wedge</option><option>Putter</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Club Type</th>
+                  <th>Brand</th>
+                  <th>Model</th>
+                  <th>New</th>
+                  <th>Above Avg</th>
+                  <th>Average</th>
+                  <th>Below Avg</th>
+                  <th>Active</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="pricingTbody">
+                <tr class="loading-row"><td colspan="9"><span class="spinner"></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CODES VIEW ────────────────────────── -->
+      <div class="view" id="view-codes">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Member Codes</div>
+            <button class="btn btn-primary btn-sm" onclick="openCodeModal()">+ Add Code</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Label</th>
+                  <th>Bonus</th>
+                  <th>Uses</th>
+                  <th>Expires</th>
+                  <th>Active</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="codesTbody">
+                <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PASSWORD VIEW ──────────────────────── -->
+      <div class="view" id="view-password">
+        <div class="card" style="max-width:480px">
+          <div class="card-header">
+            <div class="card-title">Change Password</div>
+          </div>
+          <div class="card-body">
+            <div id="pw-alert" style="display:none;margin-bottom:16px"></div>
+            <div class="form-row">
+              <label class="form-label">Current Password</label>
+              <input type="password" class="form-input" id="pw-current" placeholder="••••••••">
+            </div>
+            <div class="form-row">
+              <label class="form-label">New Password</label>
+              <input type="password" class="form-input" id="pw-new" placeholder="Min 8 characters">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Confirm New Password</label>
+              <input type="password" class="form-input" id="pw-confirm" placeholder="Repeat new password">
+            </div>
+            <button class="btn btn-primary" id="pw-btn" onclick="changePassword()" style="width:100%;justify-content:center;height:40px">
+              Update Password
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS VIEW ──────────────────────── -->
+      <div class="view" id="view-settings">
+        <div style="max-width:480px">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Change Password</div>
+            </div>
+            <div class="card-body">
+              <div id="pw-alert" style="display:none;margin-bottom:16px"></div>
+              <div class="form-row">
+                <label class="form-label">Current Password</label>
+                <input type="password" class="form-input" id="pw-current" placeholder="••••••••" autocomplete="current-password">
+              </div>
+              <div class="form-row">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-input" id="pw-new" placeholder="Min 8 characters" autocomplete="new-password">
+              </div>
+              <div class="form-row">
+                <label class="form-label">Confirm New Password</label>
+                <input type="password" class="form-input" id="pw-confirm" placeholder="Repeat new password" autocomplete="new-password">
+              </div>
+              <button class="btn btn-primary" id="pw-btn" onclick="changePassword()" style="width:100%;justify-content:center">
+                Update Password
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ── SUBMISSION DETAIL MODAL ───────────────────── -->
+<div class="modal-overlay" id="subModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="subModalTitle">Submission</div>
+      <button class="modal-close" onclick="closeModal('subModal')">✕</button>
+    </div>
+    <div class="modal-body" id="subModalBody"></div>
+    <div class="modal-footer" id="subModalFooter"></div>
+  </div>
+</div>
+
+<!-- ── PRICING MODAL ─────────────────────────────── -->
+<div class="modal-overlay" id="pricingModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add / Edit Club Pricing</div>
+      <button class="modal-close" onclick="closeModal('pricingModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-row">
+          <label class="form-label">Club Type</label>
+          <select class="form-select" id="pm-clubType">
+            <option>Driver</option><option>Fairway Wood</option><option>Hybrid</option>
+            <option>Iron Set</option><option>Single Iron</option><option>Wedge</option><option>Putter</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Brand</label>
+          <input class="form-input" id="pm-brand" placeholder="e.g. TaylorMade">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Model</label>
+        <input class="form-input" id="pm-model" placeholder="e.g. Qi10 Max">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+        <div class="form-row">
+          <label class="form-label">New ($)</label>
+          <input class="form-input" id="pm-new" type="number" placeholder="0">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Above Avg ($)</label>
+          <input class="form-input" id="pm-above" type="number" placeholder="0">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Average ($)</label>
+          <input class="form-input" id="pm-avg" type="number" placeholder="0">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Below Avg ($)</label>
+          <input class="form-input" id="pm-below" type="number" placeholder="0">
+        </div>
+      </div>
+      <div id="pm-error" class="alert alert-danger" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('pricingModal')">Cancel</button>
+      <button class="btn btn-primary" id="pm-saveBtn" onclick="savePricing()">Save Pricing</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CODE MODAL ────────────────────────────────── -->
+<div class="modal-overlay" id="codeModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Add Member Code</div>
+      <button class="modal-close" onclick="closeModal('codeModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label">Code</label>
+        <input class="form-input mono" id="cm-code" placeholder="e.g. MEMBER20" style="text-transform:uppercase">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Label</label>
+        <input class="form-input" id="cm-label" placeholder="e.g. Member 20% bonus">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-row">
+          <label class="form-label">Bonus % (e.g. 20 for 20%)</label>
+          <input class="form-input" id="cm-bonus" type="number" min="1" max="100" placeholder="20">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Max Uses (blank = unlimited)</label>
+          <input class="form-input" id="cm-maxuses" type="number" placeholder="∞">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Expiry Date (optional)</label>
+        <input class="form-input" id="cm-expires" type="date">
+      </div>
+      <div id="cm-error" class="alert alert-danger" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('codeModal')">Cancel</button>
+      <button class="btn btn-primary" id="cm-saveBtn" onclick="saveCode()">Save Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ─────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ── CONFIG ─────────────────────────────────────────────────
+const API = 'https://bettergolfclubs-api.vercel.app';
+
+// ── STATE ──────────────────────────────────────────────────
+let SESSION = null;  // { token, user }
+let subsPage = 1;
+let subsTotal = 0;
+let subsPages = 0;
+let allPricing = [];
+let debounceTimer = null;
+
+// ── HELPERS ────────────────────────────────────────────────
+const ge = id => document.getElementById(id);
+
+function fmt(v) {
+  if (v == null) return '—';
+  return '$' + Math.round(Number(v)).toLocaleString();
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function fmtDateTime(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('en-AU', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function condLabel(c) {
+  return { new:'New', above_avg:'Above Avg', avg:'Average', below_avg:'Below Avg' }[c] || c;
+}
+
+function statusBadge(s) {
+  return `<span class="badge badge-${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+
+function payBadge(p) {
+  return p === 'credit'
+    ? `<span class="badge badge-credit">Store Credit</span>`
+    : `<span class="badge badge-cash">Cash</span>`;
+}
+
+function toast(msg, type='') {
+  const t = ge('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type ? ' '+type : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = '', 3000);
+}
+
+function showModal(id) {
+  ge(id).classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+  ge(id).classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function debounceLoad() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(loadSubmissions, 350);
+}
+
+// ── API CALLS ──────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (SESSION?.token) headers['Authorization'] = 'Bearer ' + SESSION.token;
+
+  const res = await fetch(API + path, { headers, ...opts });
+
+  if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+// ── AUTH ───────────────────────────────────────────────────
+async function doLogin() {
+  const email = ge('loginEmail').value.trim();
+  const pass  = ge('loginPassword').value;
+  const err   = ge('loginError');
+  const btn   = ge('loginBtn');
+
+  if (!email || !pass) { err.textContent='Please enter email and password.'; err.classList.add('show'); return; }
+
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+  err.classList.remove('show');
+
+  try {
+    const data = await api('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password: pass }),
+    });
+
+    SESSION = { token: data.token, user: data.user };
+    localStorage.setItem('bgc_admin_session', JSON.stringify(SESSION));
+    startApp();
+  } catch(e) {
+    err.textContent = e.message === 'HTTP 401' || e.message.includes('401')
+      ? 'Invalid email or password.'
+      : 'Could not connect. Check your internet connection.';
+    err.classList.add('show');
+  } finally {
+    btn.textContent = 'Sign In'; btn.disabled = false;
+  }
+}
+
+function doLogout() {
+  SESSION = null;
+  localStorage.removeItem('bgc_admin_session');
+  ge('app').style.display = 'none';
+  ge('login-screen').style.display = 'flex';
+  ge('loginPassword').value = '';
+}
+
+// Allow Enter key on login form
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && ge('login-screen').style.display !== 'none') doLogin();
+});
+
+// ── INIT ───────────────────────────────────────────────────
+function init() {
+  // Try restore session from localStorage
+  try {
+    const saved = localStorage.getItem('bgc_admin_session');
+    if (saved) {
+      SESSION = JSON.parse(saved);
+      startApp();
+      return;
+    }
+  } catch(e) {}
+  // Show login
+  ge('login-screen').style.display = 'flex';
+}
+
+function startApp() {
+  ge('login-screen').style.display = 'none';
+  ge('app').style.display = 'flex';
+
+  if (SESSION?.user) {
+    ge('adminName').textContent  = SESSION.user.name  || 'Admin';
+    ge('adminEmail').textContent = SESSION.user.email || '';
+  }
+
+  loadDashboard();
+}
+
+// ── VIEW SWITCHING ─────────────────────────────────────────
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  ge('view-' + name).classList.add('active');
+  document.querySelector(`[data-view="${name}"]`).classList.add('active');
+
+  const titles = { dashboard:'Dashboard', submissions:'Submissions', pricing:'Pricing', codes:'Member Codes', password:'Change Password' };
+  ge('topbarTitle').textContent = titles[name] || name;
+
+  if (name === 'submissions') loadSubmissions();
+  if (name === 'pricing')     loadPricing();
+  if (name === 'codes')       loadCodes();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const data = await api('/api/admin/stats');
+
+    ge('st-total').textContent   = data.total   ?? 0;
+    ge('st-pending').textContent = data.pending  ?? 0;
+    ge('st-approved').textContent= data.approved ?? 0;
+    ge('st-credit').textContent  = data.credit   ?? 0;
+    ge('st-cash').textContent    = data.cash     ?? 0;
+
+    // Update pending badge
+    if (data.pending > 0) {
+      ge('pendingBadge').textContent = data.pending;
+      ge('pendingBadge').style.display = '';
+    }
+
+    // Recent submissions table
+    const tbody = ge('recentTbody');
+    if (!data.recent?.length) {
+      tbody.innerHTML = `<tr class="tr-no-hover"><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No submissions yet</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.recent.map(s => {
+      const val = s.payment_type === 'credit' ? fmt(s.quoted_credit) : fmt(s.quoted_cash);
+      return `<tr onclick="openSubmission('${s.id}')">
+        <td class="mono">${s.ref_code || s.id.slice(0,8).toUpperCase()}</td>
+        <td>${escHtml(s.customer_name)}</td>
+        <td>${escHtml(s.brand)} ${escHtml(s.model)}</td>
+        <td style="font-weight:600;color:var(--green)">${val}</td>
+        <td>${payBadge(s.payment_type)}</td>
+        <td>${statusBadge(s.status)}</td>
+        <td style="color:var(--muted)">${fmtDate(s.created_at)}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    console.error('loadDashboard:', e);
+  }
+}
+
+// ── SUBMISSIONS ────────────────────────────────────────────
+async function loadSubmissions() {
+  const tbody = ge('subsTbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="9"><span class="spinner"></span></td></tr>`;
+
+  const params = new URLSearchParams({
+    page: subsPage,
+    limit: 25,
+  });
+
+  const search  = ge('srchInput')?.value.trim();
+  const status  = ge('srchStatus')?.value;
+  const payment = ge('srchPayment')?.value;
+  const club    = ge('srchClub')?.value;
+
+  if (search)  params.set('search', search);
+  if (status)  params.set('status', status);
+  if (payment) params.set('paymentType', payment);
+  if (club)    params.set('clubType', club);
+
+  try {
+    const data = await api('/api/admin/submissions?' + params);
+    subsTotal = data.total || 0;
+    subsPages = data.pages || 1;
+
+    ge('pageInfo').textContent = `${subsTotal} submission${subsTotal !== 1 ? 's' : ''} — page ${subsPage} of ${subsPages}`;
+    ge('btnPrev').disabled = subsPage <= 1;
+    ge('btnNext').disabled = subsPage >= subsPages;
+
+    if (!data.submissions?.length) {
+      tbody.innerHTML = `<tr class="tr-no-hover"><td colspan="9" style="text-align:center;color:var(--muted);padding:40px">No submissions found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.submissions.map(s => {
+      const val = s.payment_type === 'credit' ? fmt(s.quoted_credit) : fmt(s.quoted_cash);
+      return `<tr onclick="openSubmission('${s.id}')">
+        <td class="mono">${s.ref_code || s.id.slice(0,8).toUpperCase()}</td>
+        <td>
+          <div style="font-weight:500">${escHtml(s.customer_name)}</div>
+          <div style="color:var(--muted);font-size:12px">${escHtml(s.customer_email)}</div>
+        </td>
+        <td>${escHtml(s.brand)} ${escHtml(s.model)}</td>
+        <td>${condLabel(s.condition)}</td>
+        <td style="font-weight:600;color:var(--green)">${val}</td>
+        <td>${payBadge(s.payment_type)}</td>
+        <td>${s.member_code ? `<span class="mono" style="font-size:11px;background:var(--green-light);color:var(--green);padding:2px 6px;border-radius:4px">${escHtml(s.member_code)}</span>` : '—'}</td>
+        <td>${statusBadge(s.status)}</td>
+        <td style="color:var(--muted)">${fmtDate(s.created_at)}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr class="tr-no-hover"><td colspan="9" style="text-align:center;color:var(--danger);padding:40px">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+function changePage(dir) {
+  subsPage = Math.max(1, Math.min(subsPages, subsPage + dir));
+  loadSubmissions();
+}
+
+function clearFilters() {
+  ge('srchInput').value = '';
+  ge('srchStatus').value = '';
+  ge('srchPayment').value = '';
+  ge('srchClub').value = '';
+  subsPage = 1;
+  loadSubmissions();
+}
+
+// ── SUBMISSION DETAIL MODAL ────────────────────────────────
+async function openSubmission(id) {
+  ge('subModalTitle').textContent = 'Loading…';
+  ge('subModalBody').innerHTML = '<div style="text-align:center;padding:40px"><span class="spinner"></span></div>';
+  ge('subModalFooter').innerHTML = '';
+  showModal('subModal');
+
+  try {
+    const s = await api('/api/admin/submission/' + id);
+    renderSubmission(s);
+  } catch(e) {
+    ge('subModalBody').innerHTML = `<div class="alert alert-danger">${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderSubmission(s) {
+  const ref = s.ref_code || s.id.slice(0,8).toUpperCase();
+  ge('subModalTitle').textContent = `Submission ${ref}`;
+
+  const val = s.payment_type === 'credit' ? fmt(s.quoted_credit) : fmt(s.quoted_cash);
+
+  ge('subModalBody').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      ${statusBadge(s.status)} ${payBadge(s.payment_type)}
+      ${s.member_code ? `<span class="badge" style="background:var(--green-light);color:var(--green)">🎟 ${escHtml(s.member_code)}</span>` : ''}
+    </div>
+
+    <div class="section-title">Club Details</div>
+    <div class="detail-grid">
+      <div class="detail-row">
+        <div class="detail-label">Club</div>
+        <div class="detail-value">${escHtml(s.brand)} ${escHtml(s.model)}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Type</div>
+        <div class="detail-value">${escHtml(s.club_type || '—')}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Condition</div>
+        <div class="detail-value">${condLabel(s.condition)}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Quoted Value</div>
+        <div class="detail-value" style="font-weight:700;color:var(--green)">${val}</div>
+      </div>
+      ${s.iron_config ? `<div class="detail-row"><div class="detail-label">Iron Config</div><div class="detail-value">${escHtml(s.iron_config)}</div></div>` : ''}
+      ${s.notes ? `<div class="detail-row"><div class="detail-label">Box Measurements</div><div class="detail-value">${escHtml(s.notes)}</div></div>` : ''}
+    </div>
+
+    <div class="section-title">Customer</div>
+    <div class="detail-grid">
+      <div class="detail-row">
+        <div class="detail-label">Name</div>
+        <div class="detail-value">${escHtml(s.customer_name)}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Email</div>
+        <div class="detail-value"><a href="mailto:${escHtml(s.customer_email)}" style="color:var(--green)">${escHtml(s.customer_email)}</a></div>
+      </div>
+      ${s.customer_phone ? `<div class="detail-row"><div class="detail-label">Phone</div><div class="detail-value">${escHtml(s.customer_phone)}</div></div>` : ''}
+      <div class="detail-row">
+        <div class="detail-label">Address</div>
+        <div class="detail-value">${escHtml(s.address || '—')}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Collection Date</div>
+        <div class="detail-value">${fmtDate(s.collection_date)}</div>
+      </div>
+      ${s.bank_details ? `<div class="detail-row"><div class="detail-label">Bank Details</div><div class="detail-value mono" style="font-size:12px">${escHtml(s.bank_details)}</div></div>` : ''}
+    </div>
+
+    ${s.status === 'approved' || s.status === 'complete' ? `
+    <div class="section-title">Fulfillment</div>
+    <div class="detail-grid">
+      ${s.gift_card_code ? `<div class="detail-row"><div class="detail-label">Gift Card Code</div><div class="detail-value mono">${escHtml(s.gift_card_code)}</div></div>` : ''}
+      ${s.discount_code  ? `<div class="detail-row"><div class="detail-label">Discount Code</div><div class="detail-value mono">${escHtml(s.discount_code)}</div></div>` : ''}
+      ${s.shipping_label_url ? `<div class="detail-row"><div class="detail-label">Shipping Label</div><div class="detail-value"><a href="${escHtml(s.shipping_label_url)}" target="_blank" style="color:var(--green)">Download →</a></div></div>` : ''}
+      ${s.tracking_number ? `<div class="detail-row"><div class="detail-label">Tracking</div><div class="detail-value mono">${escHtml(s.tracking_number)}</div></div>` : ''}
+    </div>` : ''}
+
+    ${s.admin_notes ? `
+    <div class="alert alert-warn">
+      <strong>Admin Note:</strong> ${escHtml(s.admin_notes)}
+    </div>` : ''}
+
+    <div class="section-title">Admin Actions</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${buildActionBlock(s)}
+    </div>
+
+    <div style="margin-top:16px;color:var(--muted);font-size:11px">
+      Submitted ${fmtDateTime(s.created_at)}
+      ${s.reviewed_by ? ` · Reviewed by ${escHtml(s.reviewed_by)} on ${fmtDateTime(s.reviewed_at)}` : ''}
+    </div>
+  `;
+
+  ge('subModalFooter').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal('subModal')">Close</button>
+  `;
+}
+
+function buildActionBlock(s) {
+  const id = s.id;
+  let html = '';
+
+  // Status dropdown
+  html += `
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap">Update Status:</label>
+      <select class="filter-select" id="statusSelect" style="flex:1;min-width:140px">
+        ${['pending','reviewing','approved','rejected','shipped','complete'].map(st =>
+          `<option value="${st}" ${s.status===st?'selected':''}>${st.charAt(0).toUpperCase()+st.slice(1)}</option>`
+        ).join('')}
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="updateStatus('${id}')">Update</button>
+    </div>`;
+
+  // Approve actions (only for pending/reviewing)
+  if (s.status === 'pending' || s.status === 'reviewing') {
+    if (s.payment_type === 'credit') {
+      html += `
+        <div style="background:var(--success-bg);border:1px solid #bbf7d0;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:12px;font-weight:600;color:var(--success)">✓ Approve — Store Credit</div>
+          <div style="font-size:12px;color:var(--muted)">Create a discount code in <a href="https://admin.shopify.com/store/0912ad-c2/discounts" target="_blank" style="color:var(--green)">Shopify Admin → Discounts</a>, then enter it below.</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="form-input mono" id="discountCode" placeholder="e.g. TRADEIN-ABC123" style="flex:1;min-width:180px;text-transform:uppercase">
+            <button class="btn btn-success btn-sm" onclick="approveSubmission('${id}')">✓ Approve + Send to Customer</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-danger btn-sm" onclick="rejectSubmission('${id}')">✗ Reject</button>
+        </div>`;
+    } else {
+      html += `
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-success btn-sm" onclick="approveSubmission('${id}')">✓ Approve Cash Payment</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectSubmission('${id}')">✗ Reject</button>
+        </div>`;
+    }
+  }
+
+  // Attach shipping label (approved or reviewing)
+  if (s.status === 'approved' || s.status === 'reviewing' || s.status === 'pending') {
+    html += `
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input class="form-input" id="labelUrl" placeholder="Shipping label URL" style="flex:1;min-width:200px">
+        <input class="form-input" id="trackingNum" placeholder="Tracking # (optional)" style="width:160px">
+        <button class="btn btn-secondary btn-sm" onclick="attachLabel('${id}')">📦 Attach Label</button>
+      </div>`;
+  }
+
+  return html;
+}
+
+// ── SUBMISSION ACTIONS ─────────────────────────────────────
+async function updateStatus(id) {
+  const status = ge('statusSelect').value;
+  try {
+    await api('/api/admin/submission/' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'update-status', id, status }),
+    });
+    toast('Status updated', 'success');
+    closeModal('subModal');
+    loadSubmissions(); loadDashboard();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function approveSubmission(id) {
+  const codeInput = ge('discountCode');
+  const discountCode = codeInput ? codeInput.value.trim().toUpperCase() : '';
+  
+  // For credit submissions, require a discount code
+  const isCreditSub = document.querySelector('#subModalBody .badge-credit') !== null;
+  if (isCreditSub && !discountCode) {
+    toast('Please enter a discount code first', 'error');
+    if (codeInput) codeInput.focus();
+    return;
+  }
+
+  try {
+    const s = await api('/api/admin/submission/' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'approve', id, useGiftCard: false, manualDiscountCode: discountCode || undefined }),
+    });
+    toast('Approved! Customer notified by email.', 'success');
+    closeModal('subModal');
+    loadSubmissions(); loadDashboard();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function rejectSubmission(id) {
+  const reason = prompt('Rejection reason (shown to customer — leave blank to skip):');
+  if (reason === null) return; // cancelled
+  try {
+    await api('/api/admin/submission/' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'reject', id, reason }),
+    });
+    toast('Submission rejected', 'success');
+    closeModal('subModal');
+    loadSubmissions(); loadDashboard();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function attachLabel(id) {
+  const url  = ge('labelUrl')?.value.trim();
+  const num  = ge('trackingNum')?.value.trim();
+  if (!url) { toast('Please enter a label URL', 'error'); return; }
+  try {
+    await api('/api/admin/submission/' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'attach-label', id, shippingLabelUrl: url, trackingNumber: num || undefined }),
+    });
+    toast('Label attached & email sent to customer', 'success');
+    closeModal('subModal');
+    loadSubmissions(); loadDashboard();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── PRICING ────────────────────────────────────────────────
+async function loadPricing() {
+  const tbody = ge('pricingTbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="9"><span class="spinner"></span></td></tr>`;
+  try {
+    allPricing = await api('/api/admin/pricing');
+    renderPricing(allPricing);
+  } catch(e) {
+    tbody.innerHTML = `<tr class="tr-no-hover"><td colspan="9" style="text-align:center;color:var(--danger);padding:32px">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+function renderPricing(rows) {
+  const tbody = ge('pricingTbody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr class="tr-no-hover"><td colspan="9" style="text-align:center;color:var(--muted);padding:32px">No pricing data</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(p => `
+    <tr class="tr-no-hover">
+      <td>${escHtml(p.club_type)}</td>
+      <td style="font-weight:500">${escHtml(p.brand)}</td>
+      <td>${escHtml(p.model)}</td>
+      <td style="color:var(--green);font-weight:600">${fmt(p.price_new)}</td>
+      <td>${fmt(p.price_above_avg)}</td>
+      <td>${fmt(p.price_avg)}</td>
+      <td>${fmt(p.price_below_avg)}</td>
+      <td>${p.active ? '<span style="color:var(--success)">✓</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="openPricingModal(${JSON.stringify(p).split('"').join('&quot;')})">Edit</button>
+        ${p.active ? `<button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deactivatePricing('${p.id}')">Deactivate</button>` : ''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterPricing() {
+  const q     = ge('priceSearch').value.toLowerCase();
+  const type  = ge('priceClubFilter').value;
+  const rows  = allPricing.filter(p =>
+    (!type || p.club_type === type) &&
+    (!q    || p.brand.toLowerCase().includes(q) || p.model.toLowerCase().includes(q))
+  );
+  renderPricing(rows);
+}
+
+function openPricingModal(p = null) {
+  if (p && typeof p === 'string') p = JSON.parse(p);
+  ge('pm-clubType').value = p?.club_type  || 'Driver';
+  ge('pm-brand').value    = p?.brand      || '';
+  ge('pm-model').value    = p?.model      || '';
+  ge('pm-new').value      = p?.price_new  || '';
+  ge('pm-above').value    = p?.price_above_avg || '';
+  ge('pm-avg').value      = p?.price_avg  || '';
+  ge('pm-below').value    = p?.price_below_avg || '';
+  ge('pm-error').style.display = 'none';
+  showModal('pricingModal');
+}
+
+async function savePricing() {
+  const btn = ge('pm-saveBtn');
+  const err = ge('pm-error');
+  err.style.display = 'none';
+
+  const body = {
+    clubType:     ge('pm-clubType').value,
+    brand:        ge('pm-brand').value.trim(),
+    model:        ge('pm-model').value.trim(),
+    priceNew:     Number(ge('pm-new').value),
+    priceAboveAvg:Number(ge('pm-above').value),
+    priceAvg:     Number(ge('pm-avg').value),
+    priceBelowAvg:Number(ge('pm-below').value),
+    active: true,
+  };
+
+  if (!body.brand || !body.model || !body.priceNew) {
+    err.textContent = 'Please fill in all fields.';
+    err.style.display = 'flex'; return;
+  }
+
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    await api('/api/admin/pricing', { method: 'POST', body: JSON.stringify(body) });
+    toast('Pricing saved', 'success');
+    closeModal('pricingModal');
+    loadPricing();
+  } catch(e) {
+    err.textContent = e.message;
+    err.style.display = 'flex';
+  } finally { btn.textContent = 'Save Pricing'; btn.disabled = false; }
+}
+
+async function deactivatePricing(id) {
+  if (!confirm('Deactivate this club from the calculator?')) return;
+  try {
+    await api('/api/admin/pricing?id=' + id, { method: 'DELETE' });
+    toast('Deactivated', 'success');
+    loadPricing();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── CODES ──────────────────────────────────────────────────
+async function loadCodes() {
+  const tbody = ge('codesTbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>`;
+  try {
+    const codes = await api('/api/admin/codes');
+    if (!codes.length) {
+      tbody.innerHTML = `<tr class="tr-no-hover"><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No codes</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = codes.map(c => `
+      <tr class="tr-no-hover">
+        <td class="mono" style="font-weight:600;color:var(--green)">${escHtml(c.code)}</td>
+        <td>${escHtml(c.label)}</td>
+        <td>${Math.round(c.bonus * 100)}%</td>
+        <td>${c.uses_count}${c.max_uses ? ' / ' + c.max_uses : ''}</td>
+        <td style="color:var(--muted)">${c.expires_at ? fmtDate(c.expires_at) : '—'}</td>
+        <td>${c.active ? '<span style="color:var(--success)">✓ Active</span>' : '<span style="color:var(--muted)">Inactive</span>'}</td>
+        <td>
+          <button class="btn btn-${c.active?'danger':'success'} btn-sm" onclick="toggleCode('${c.id}', ${!c.active})">
+            ${c.active ? 'Deactivate' : 'Activate'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr class="tr-no-hover"><td colspan="7" style="text-align:center;color:var(--danger);padding:32px">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+function openCodeModal() {
+  ge('cm-code').value = ''; ge('cm-label').value = '';
+  ge('cm-bonus').value = ''; ge('cm-maxuses').value = '';
+  ge('cm-expires').value = '';
+  ge('cm-error').style.display = 'none';
+  showModal('codeModal');
+}
+
+async function saveCode() {
+  const btn = ge('cm-saveBtn');
+  const err = ge('cm-error');
+  err.style.display = 'none';
+
+  const bonusPct = Number(ge('cm-bonus').value);
+  const body = {
+    code:    ge('cm-code').value.trim().toUpperCase(),
+    label:   ge('cm-label').value.trim(),
+    bonus:   bonusPct / 100,
+    active:  true,
+    maxUses: ge('cm-maxuses').value ? Number(ge('cm-maxuses').value) : undefined,
+    expiresAt: ge('cm-expires').value ? new Date(ge('cm-expires').value).toISOString() : undefined,
+  };
+
+  if (!body.code || !body.label || !bonusPct) {
+    err.textContent = 'Please fill in code, label, and bonus %.';
+    err.style.display = 'flex'; return;
+  }
+
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    await api('/api/admin/codes', { method: 'POST', body: JSON.stringify(body) });
+    toast('Code saved', 'success');
+    closeModal('codeModal');
+    loadCodes();
+  } catch(e) {
+    err.textContent = e.message;
+    err.style.display = 'flex';
+  } finally { btn.textContent = 'Save Code'; btn.disabled = false; }
+}
+
+async function toggleCode(id, active) {
+  try {
+    await api('/api/admin/codes', {
+      method: 'PATCH',
+      body: JSON.stringify({ id, active }),
+    });
+    toast(active ? 'Code activated' : 'Code deactivated', 'success');
+    loadCodes();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── CHANGE PASSWORD ───────────────────────────────────────
+async function changePassword() {
+  const current = ge('pw-current').value;
+  const newPw   = ge('pw-new').value;
+  const confirm = ge('pw-confirm').value;
+  const alert   = ge('pw-alert');
+  const btn     = ge('pw-btn');
+
+  // Reset
+  alert.style.display = 'none';
+
+  // Validate
+  if (!current || !newPw || !confirm) {
+    alert.className = 'alert alert-warn';
+    alert.textContent = 'Please fill in all fields.';
+    alert.style.display = 'flex'; return;
+  }
+  if (newPw.length < 8) {
+    alert.className = 'alert alert-warn';
+    alert.textContent = 'New password must be at least 8 characters.';
+    alert.style.display = 'flex'; return;
+  }
+  if (newPw !== confirm) {
+    alert.className = 'alert alert-warn';
+    alert.textContent = 'Passwords do not match.';
+    alert.style.display = 'flex'; return;
+  }
+
+  btn.textContent = 'Updating…'; btn.disabled = true;
+
+  try {
+    await api('/api/admin/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword: current, newPassword: newPw }),
+    });
+
+    // Clear fields
+    ge('pw-current').value = '';
+    ge('pw-new').value = '';
+    ge('pw-confirm').value = '';
+
+    alert.className = 'alert alert-success';
+    alert.textContent = '✓ Password updated successfully.';
+    alert.style.display = 'flex';
+    toast('Password updated', 'success');
+  } catch(e) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = e.message || 'Failed to update password.';
+    alert.style.display = 'flex';
+  } finally {
+    btn.textContent = 'Update Password'; btn.disabled = false;
+  }
+}
+
+// ── CHANGE PASSWORD ───────────────────────────────────────
+async function changePassword() {
+  const current = ge('pw-current').value;
+  const newPw   = ge('pw-new').value;
+  const confirm = ge('pw-confirm').value;
+  const alert   = ge('pw-alert');
+  const btn     = ge('pw-btn');
+
+  // Clear previous alert
+  alert.style.display = 'none';
+
+  // Validate
+  if (!current || !newPw || !confirm) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = 'Please fill in all fields.';
+    alert.style.display = 'flex';
+    return;
+  }
+  if (newPw.length < 8) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = 'New password must be at least 8 characters.';
+    alert.style.display = 'flex';
+    return;
+  }
+  if (newPw !== confirm) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = 'New passwords do not match.';
+    alert.style.display = 'flex';
+    return;
+  }
+
+  btn.textContent = 'Updating…';
+  btn.disabled = true;
+
+  try {
+    await api('/api/admin/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword: current, newPassword: newPw }),
+    });
+
+    // Clear fields
+    ge('pw-current').value = '';
+    ge('pw-new').value = '';
+    ge('pw-confirm').value = '';
+
+    alert.className = 'alert alert-success';
+    alert.textContent = '✓ Password updated successfully.';
+    alert.style.display = 'flex';
+  } catch(e) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = e.message || 'Failed to update password.';
+    alert.style.display = 'flex';
+  } finally {
+    btn.textContent = 'Update Password';
+    btn.disabled = false;
+  }
+}
+
+// ── SECURITY: escape HTML to prevent XSS ──────────────────
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ── BOOT ───────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

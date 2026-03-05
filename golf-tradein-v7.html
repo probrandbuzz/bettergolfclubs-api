@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Golf Club Trade-In Value Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:       #124c33;
+    --green-hover: #0d3826;
+    --green-light: #1a6b47;
+    --green-bg:    rgba(18,76,51,0.07);
+    --green-bd:    rgba(18,76,51,0.25);
+    --text:        #1a1a1a;
+    --muted:       #6b7280;
+    --border:      #e5e7eb;
+    --bg:          #f9fafb;
+    --white:       #ffffff;
+    --red:         #dc2626;
+    --blue:        #2563eb;
+    --blue-bg:     #eff6ff;
+    --amber-bg:    #fffbeb;
+    --amber-bd:    #fde68a;
+    --amber-txt:   #78350f;
+    --shadow:      0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.08);
+    --radius:      14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── PAGE HEADER ─────────────────────────────── */
+  .page-header {
+    background: linear-gradient(135deg, #124c33 0%, #0f3d28 50%, #124c33 100%);
+    text-align: center;
+    padding: 52px 20px 44px;
+    position: relative;
+    overflow: hidden;
+  }
+  .page-header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 30%, rgba(26,107,71,.45) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .page-header-inner { position: relative; z-index: 1; }
+  .instant-quote-pill {
+    display: inline-block;
+    border: 1.5px solid rgba(255,255,255,.32);
+    border-radius: 100px;
+    padding: 5px 18px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(255,255,255,.72);
+    margin-bottom: 18px;
+  }
+  .page-header h1 {
+    font-family: 'Playfair Display', 'Georgia', serif;
+    font-size: clamp(30px, 6vw, 52px);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .page-header h1 .line1 { display: block; color: #ffffff; }
+  .page-header h1 .line2 { display: block; color: #c9a84c; }
+  .page-header .sub {
+    font-size: 15px;
+    color: rgba(255,255,255,.68);
+    font-weight: 400;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ─── MAIN ─────────────────────────────────────── */
+  .main {
+    max-width: 880px;
+    margin: 36px auto 64px;
+    padding: 0 20px;
+  }
+
+  /* ─── CARD ─────────────────────────────────────── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 28px 36px 0;
+    text-align: center;
+  }
+  .card-head h2 {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  /* ─── STEP PROGRESS ────────────────────────────── */
+  .step-bar {
+    display: flex;
+    align-items: flex-start;
+    padding: 24px 40px 0;
+  }
+  .step-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+  }
+  .step-circle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--white);
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    transition: all .25s;
+    position: relative;
+  }
+  .step-circle.active { background: var(--green); border-color: var(--green); color: #fff; }
+  .step-circle.done   { background: var(--green); border-color: var(--green); color: #fff; }
+  .step-lbl {
+    font-size: 12px; font-weight: 500;
+    color: var(--muted); white-space: nowrap;
+    transition: color .25s;
+  }
+  .step-lbl.active { color: var(--green); font-weight: 600; }
+  .step-lbl.done   { color: var(--green); }
+  .step-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    margin-top: 17px;
+    transition: background .25s;
+  }
+  .step-connector.done { background: var(--green); }
+
+  /* ─── FORM BODY ─────────────────────────────────── */
+  .form-body { padding: 24px 36px 36px; }
+  @media (max-width: 560px) {
+    .form-body { padding: 20px 16px 28px; }
+    .step-bar  { padding: 20px 16px 0; }
+    .card-head { padding: 24px 16px 0; }
+  }
+
+  .form-step        { display: none; }
+  .form-step.active { display: block; animation: fadeUp .3s ease; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── STEP 1 LAYOUT ───────────────────────────── */
+  /* Row A: Type + Brand side by side */
+  .row-type-brand {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  /* Row B: Model full width */
+  .row-model {
+    margin-bottom: 20px;
+  }
+  @media (max-width: 480px) {
+    .row-type-brand { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  /* ─── INPUTS ────────────────────────────────────── */
+  select, input[type="text"], input[type="email"],
+  input[type="tel"], input[type="date"], textarea {
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--white);
+    transition: border-color .15s, box-shadow .15s;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+  }
+  select:focus, input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(18,76,51,.10);
+  }
+  select:disabled { opacity: .45; cursor: not-allowed; }
+  textarea { resize: vertical; min-height: 82px; background-image: none; }
+
+  /* ─── IRON EXTRAS ────────────────────────────────── */
+  .iron-extra { display: none; margin-bottom: 20px; }
+  .missing-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer; user-select: none;
+    transition: background .1s;
+  }
+  .missing-row:hover { background: #fafafa; }
+  .tgl-track {
+    width: 40px; height: 22px;
+    background: #d1d5db; border-radius: 11px;
+    position: relative; flex-shrink: 0;
+    transition: background .2s;
+  }
+  .tgl-track::after {
+    content: '';
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: #fff; border-radius: 50%;
+    transition: transform .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .tgl-track.on { background: var(--green); }
+  .tgl-track.on::after { transform: translateX(18px); }
+  .missing-chips-wrap {
+    display: none;
+    margin-top: 10px; padding: 14px;
+    background: #f9fafb;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+  }
+  .missing-chips-wrap.show { display: block; }
+  .chips-lbl { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    padding: 4px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; background: #fff;
+    transition: all .1s; user-select: none;
+  }
+  .chip:hover { background: #f3f4f6; }
+  .chip.on { background: #fef2f2; border-color: var(--red); color: var(--red); }
+
+  /* ─── CONDITION — 2-column ───────────────────────── */
+  .cond-label { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+  .cond-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .cond-card {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center; gap: 5px;
+  }
+  .cond-card:hover { border-color: #9ca3af; background: #fafafa; }
+  .cond-card.sel   { border-color: var(--green); background: var(--green-bg); }
+  .cond-icon  { font-size: 24px; line-height: 1; }
+  .cond-name  { font-size: 13.5px; font-weight: 700; }
+  .cond-desc  { font-size: 12px; color: var(--muted); }
+
+  /* ─── STEP 1 BUTTON / ERROR ─────────────────────── */
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--green); color: #fff;
+    border: none; border-radius: 8px;
+    padding: 13px 24px;
+    font-family: inherit; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: background .15s, transform .1s;
+  }
+  .btn-primary:hover  { background: var(--green-hover); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .step1-end-bar {
+    margin-top: 14px; height: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px; background: #f9fafb;
+  }
+  .err { font-size: 12px; color: var(--red); margin: 6px 0 4px; display: none; }
+  .err.show { display: block; }
+
+  /* ─── STEP 2: RESULT PANEL ───────────────────────── */
+  .result-panel {
+    background: var(--green); border-radius: 12px;
+    padding: 28px 24px; color: #fff;
+    text-align: center; margin-bottom: 20px;
+    position: relative; overflow: hidden;
+  }
+  .result-panel::before {
+    content: '';
+    position: absolute; top: -50px; right: -50px;
+    width: 180px; height: 180px;
+    background: rgba(255,255,255,.05); border-radius: 50%;
+  }
+  .res-lbl {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1.8px; text-transform: uppercase;
+    opacity: .7; margin-bottom: 8px;
+  }
+  .res-amt {
+    font-size: 54px; font-weight: 800;
+    letter-spacing: -2px; line-height: 1; margin-bottom: 6px;
+  }
+  .res-club { font-size: 14px; opacity: .8; margin-bottom: 18px; }
+  .vtype-row { display: flex; justify-content: center; gap: 8px; }
+  .vt-btn {
+    padding: 7px 18px; border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,.4);
+    color: rgba(255,255,255,.7); background: transparent;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .vt-btn.active { background: #fff; color: var(--green); border-color: #fff; }
+
+  /* ─── MEMBER CODE ────────────────────────────────── */
+  .member-box {
+    border: 1.5px dashed var(--green-bd);
+    background: var(--green-bg);
+    border-radius: 10px; padding: 16px; margin-bottom: 18px;
+  }
+  .member-box-title {
+    font-size: 13px; font-weight: 700;
+    color: var(--green); margin-bottom: 3px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .member-box-sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .member-input-row { display: flex; gap: 8px; }
+  .member-input-row input {
+    flex: 1; font-size: 13px; padding: 9px 12px;
+    text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+    width: auto;
+  }
+  .btn-apply {
+    flex-shrink: 0; padding: 9px 16px;
+    background: var(--green); color: #fff;
+    border: none; border-radius: 8px;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: background .15s;
+  }
+  .btn-apply:hover { background: var(--green-hover); }
+  .code-fb { font-size: 12px; margin-top: 6px; display: none; }
+  .code-fb.ok  { display: block; color: var(--green); }
+  .code-fb.bad { display: block; color: var(--red); }
+  .code-badge {
+    display: none; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700;
+    color: var(--green); margin-top: 6px;
+  }
+  .code-badge.show { display: flex; }
+  .code-badge-remove { color: var(--muted); font-weight: 400; cursor: pointer; margin-left: 4px; }
+
+  /* ─── BREAKDOWN ──────────────────────────────────── */
+  .breakdown {
+    background: #f9fafb; border-radius: 10px;
+    padding: 18px; margin-bottom: 18px;
+  }
+  .bd-title {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 12px;
+  }
+  .bd-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; border-bottom: 1px solid #e5e7eb; font-size: 13px;
+  }
+  .bd-row:last-child { border-bottom: none; font-weight: 700; font-size: 15px; }
+  .bd-row .bd-k { color: var(--muted); }
+  .bd-row.total .bd-k { color: var(--text); }
+  .bd-row .bd-v { font-weight: 600; }
+  .green-v { color: var(--green); }
+  .red-v   { color: var(--red); }
+
+  /* ─── NOT FOUND ──────────────────────────────────── */
+  .not-found {
+    background: var(--amber-bg); border: 1px solid var(--amber-bd);
+    border-radius: 10px; padding: 14px 16px;
+    font-size: 13px; color: var(--amber-txt);
+    margin-bottom: 18px; display: none;
+  }
+  .not-found strong { display: block; margin-bottom: 3px; }
+
+  /* ─── CART (multi-club) ─────────────────────────── */
+  .cart-section {
+    margin-bottom: 18px; display: none;
+  }
+  .cart-section.show { display: block; }
+  .cart-section-title {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .cart-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    overflow: hidden;
+  }
+  .cart-table th {
+    background: #f3f4f6;
+    padding: 8px 12px; text-align: left;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted);
+    border-bottom: 1.5px solid var(--border);
+  }
+  .cart-table th:last-child { text-align: right; }
+  .cart-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .cart-table tr:last-child td { border-bottom: none; }
+  .cart-table .td-club { font-weight: 600; }
+  .cart-table .td-cond { color: var(--muted); font-size: 12px; }
+  .cart-table .td-val  { text-align: right; font-weight: 700; color: var(--green); white-space: nowrap; }
+  .cart-table .td-del  { text-align: right; width: 36px; }
+  .btn-del-club {
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 16px; padding: 2px 4px;
+    border-radius: 4px; line-height: 1;
+    transition: color .12s, background .12s;
+  }
+  .btn-del-club:hover { color: var(--red); background: #fef2f2; }
+  .cart-total-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px 0;
+    font-size: 14px; font-weight: 700;
+    border-top: 2px solid var(--border); margin-top: 2px;
+  }
+  .cart-total-bar .ct-label { color: var(--text); }
+  .cart-total-bar .ct-val   { color: var(--green); font-size: 16px; }
+
+  /* Add another club — matches member-box styling */
+  .btn-add-another {
+    display: none;
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--green-bg);
+    border: 1.5px dashed var(--green-bd);
+    border-radius: 10px;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    color: var(--green); cursor: pointer;
+    transition: background .15s, border-color .15s;
+    align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  .btn-add-another.show { display: flex; }
+  .btn-add-another:hover {
+    background: rgba(18,76,51,.13);
+    border-color: rgba(18,76,51,.45);
+  }
+  .btn-add-another svg { flex-shrink: 0; }
+
+  /* ─── STEP 2 ACTIONS ─────────────────────────────── */
+  .s2-acts {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin-top: 4px;
+  }
+  @media (max-width: 400px) { .s2-acts { grid-template-columns: 1fr; } }
+
+  .btn-ghost {
+    padding: 12px; background: #fff;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; color: var(--text); transition: background .15s;
+  }
+  .btn-ghost:hover { background: #f9fafb; }
+  .btn-go {
+    padding: 12px; background: var(--green);
+    border: none; border-radius: 8px;
+    font-family: inherit; font-size: 14px; font-weight: 700;
+    cursor: pointer; color: #fff; transition: background .15s;
+  }
+  .btn-go:hover { background: var(--green-hover); }
+
+  /* ─── STEP 3 ─────────────────────────────────────── */
+  .s3-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .s3-sub   { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+  /* Quote summary */
+  .quote-summary {
+    background: #f9fafb; border-radius: 10px;
+    padding: 14px 16px; margin-bottom: 20px; font-size: 13px;
+  }
+  .qs-row {
+    display: flex; justify-content: space-between;
+    padding: 5px 0; border-bottom: 1px solid var(--border);
+  }
+  .qs-row:last-child { border-bottom: none; }
+  .qs-k { color: var(--muted); }
+  .qs-v { font-weight: 700; }
+  .qs-v.hl { color: var(--green); font-size: 15px; }
+
+  /* Multi-club list in step 3 */
+  .s3-club-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 6px 0; border-bottom: 1px solid var(--border);
+    font-size: 13px; gap: 8px;
+  }
+  .s3-club-row:last-child { border-bottom: none; }
+  .s3-club-name { color: var(--text); font-weight: 500; }
+  .s3-club-meta { color: var(--muted); font-size: 12px; margin-left: 5px; font-weight: 400; }
+  .s3-club-val  { font-weight: 700; color: var(--green); white-space: nowrap; }
+
+  /* Form fields */
+  .f-field { margin-bottom: 16px; }
+  .f-field label { display: block; margin-bottom: 5px; font-size: 13px; font-weight: 600; }
+  .field-hint {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11.5px; color: var(--blue);
+    margin-top: 5px;
+  }
+  .field-hint svg { flex-shrink: 0; }
+
+  /* Cash-only box */
+  .cash-box {
+    display: none; padding: 16px; margin-bottom: 16px;
+    background: #f9fafb;
+    border: 1.5px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 8px;
+  }
+  .cash-box.show { display: block; }
+  .cash-box-title {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 14px;
+  }
+
+  /* Credit-only box (address + collection date) */
+  .credit-box {
+    display: none; padding: 16px; margin-bottom: 16px;
+    background: #f9fafb;
+    border: 1.5px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 8px;
+  }
+  .credit-box.show { display: block; }
+  .credit-box-title {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 14px;
+  }
+  .shipping-warning {
+    display: flex; gap: 10px;
+    background: var(--amber-bg);
+    border: 1px solid var(--amber-bd);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12.5px; color: var(--amber-txt);
+    margin-bottom: 16px; line-height: 1.5;
+  }
+  .shipping-warning svg { flex-shrink: 0; margin-top: 1px; }
+
+  /* Step 3 actions */
+  .s3-acts {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin-top: 16px;
+  }
+  @media (max-width: 400px) { .s3-acts { grid-template-columns: 1fr; } }
+
+  /* ─── SUCCESS ─────────────────────────────────────── */
+  .success-panel {
+    display: none; text-align: center;
+    padding: 52px 24px; animation: fadeUp .4s ease;
+  }
+  .success-icon {
+    width: 64px; height: 64px;
+    background: var(--green); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: #fff;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 24px rgba(18,76,51,.25);
+  }
+  .success-panel h3 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .success-panel p {
+    font-size: 14px; color: var(--muted);
+    max-width: 360px; margin: 0 auto 24px;
+  }
+
+  /* ─── PERKS BAR — 2 items ────────────────────────── */
+  .perks-bar {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    max-width: 880px; margin: 0 auto;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 480px) { .perks-bar { grid-template-columns: 1fr; } }
+
+  .perk {
+    display: flex; flex-direction: column; align-items: center; gap: 9px;
+    padding: 40px 20px;
+    border-right: 1px solid var(--border);
+  }
+  .perk:last-child { border-right: none; }
+  @media (max-width: 480px) {
+    .perk { border-right: none; border-bottom: 1px solid var(--border); }
+    .perk:last-child { border-bottom: none; }
+  }
+  .perk-ico {
+    width: 42px; height: 42px;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .perk-name {
+    font-size: 11.5px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .8px;
+  }
+  .perk-desc { font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .perk-desc a { color: var(--green); text-decoration: none; }
+  .perk-desc a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER — guarantee + shipping pills removed -->
+<div class="page-header" id="top">
+  <div class="page-header-inner">
+    <div class="instant-quote-pill">Instant Quote</div>
+    <h1>
+      <span class="line1">Trade In.</span>
+      <span class="line2">Upgrade Your Game.</span>
+    </h1>
+    <p class="sub">Get an instant trade-in value for your golf clubs — cash or store credit.</p>
+  </div>
+</div>
+
+<!-- MAIN CARD -->
+<div class="main">
+  <div class="card">
+    <div class="card-head"><h2>Calculate Your Trade-In Value</h2></div>
+
+    <!-- Step progress bar -->
+    <div class="step-bar">
+      <div class="step-node">
+        <div class="step-circle active" id="sc1">1</div>
+        <div class="step-lbl active" id="sl1">Club Details</div>
+      </div>
+      <div class="step-connector" id="ln1"></div>
+      <div class="step-node">
+        <div class="step-circle" id="sc2">2</div>
+        <div class="step-lbl" id="sl2">Review Value</div>
+      </div>
+      <div class="step-connector" id="ln2"></div>
+      <div class="step-node">
+        <div class="step-circle" id="sc3">3</div>
+        <div class="step-lbl" id="sl3">Complete</div>
+      </div>
+    </div>
+
+    <div class="form-body">
+
+      <!-- ══ STEP 1: Club Details ══ -->
+      <div class="form-step active" id="step1">
+
+        <!-- Row A: Club Type + Brand (side by side) -->
+        <div class="row-type-brand">
+          <div class="field">
+            <label for="clubType">Club Type</label>
+            <select id="clubType" onchange="onTypeChange()">
+              <option value="">Select club type</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="brand">Brand</label>
+            <select id="brand" disabled onchange="onBrandChange()">
+              <option value="">Select brand</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row B: Model (full width) -->
+        <div class="row-model">
+          <div class="field">
+            <label for="model">Model</label>
+            <select id="model" disabled onchange="onModelChange()">
+              <option value="">Select model</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Iron extras -->
+        <div class="iron-extra" id="ironExtra">
+          <div class="field" style="margin-bottom:14px;">
+            <label for="ironCfg">Iron Set Configuration</label>
+            <select id="ironCfg">
+              <option value="">Select configuration</option>
+              <option>3-9</option><option>3-PW</option><option>3-AW</option>
+              <option>3-SW</option><option>3-LW</option><option>4-9</option>
+              <option>4-PW</option><option>4-AW</option><option>4-SW</option>
+              <option>4-LW</option><option>5-9</option><option>5-PW</option>
+              <option>5-AW</option><option>5-SW</option><option>5-LW</option>
+              <option>6-PW</option><option>6-AW</option><option>6-SW</option>
+              <option>6-LW</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Are there any clubs missing from the set?</label>
+            <div class="missing-row" onclick="toggleMissing()">
+              <div class="tgl-track" id="missTgl"></div>
+              <span id="missLbl" style="font-size:13px;color:var(--muted);">No — all clubs present</span>
+            </div>
+            <div class="missing-chips-wrap" id="missChipsWrap">
+              <div class="chips-lbl">Select the clubs that are missing:</div>
+              <div class="chips" id="missChips"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Condition — 2-column grid -->
+        <div class="cond-label">Condition</div>
+        <div class="cond-grid">
+          <div class="cond-card" onclick="selCond('new',this)">
+            <div class="cond-icon">✨</div>
+            <div class="cond-name">New</div>
+            <div class="cond-desc">Still in wrapper or unused</div>
+          </div>
+          <div class="cond-card" onclick="selCond('above_avg',this)">
+            <div class="cond-icon">⭐</div>
+            <div class="cond-name">Above Average</div>
+            <div class="cond-desc">Excellent, minimal wear</div>
+          </div>
+          <div class="cond-card" onclick="selCond('avg',this)">
+            <div class="cond-icon">👍</div>
+            <div class="cond-name">Average</div>
+            <div class="cond-desc">Normal play wear</div>
+          </div>
+          <div class="cond-card" onclick="selCond('below_avg',this)">
+            <div class="cond-icon">⚠️</div>
+            <div class="cond-name">Below Average</div>
+            <div class="cond-desc">Heavy wear or damage</div>
+          </div>
+        </div>
+
+        <div class="err" id="s1err">Please select a club type, brand, model, and condition.</div>
+
+        <button class="btn-primary" onclick="submitStep1()">
+          Get Trade-In Value
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+
+        <div class="step1-end-bar"></div>
+      </div><!-- /step1 -->
+
+      <!-- ══ STEP 2: Review Value ══ -->
+      <div class="form-step" id="step2">
+
+        <!-- Big value display -->
+        <div class="result-panel">
+          <div class="res-lbl">Estimated Trade-In Value</div>
+          <div class="res-amt" id="resAmt">—</div>
+          <div class="res-club" id="resClub"></div>
+          <div class="vtype-row">
+            <button class="vt-btn active" id="vtCredit" onclick="setVtype('credit')">Store Credit</button>
+            <button class="vt-btn"        id="vtCash"   onclick="setVtype('cash')">Cash</button>
+          </div>
+        </div>
+
+        <!-- Not-found notice -->
+        <div class="not-found" id="notFound">
+          <strong>No price on file for this club</strong>
+          We don't have this model in our database yet. Submit your details and we'll respond within 1 business day with a manual quote.
+        </div>
+
+        <!-- Member bonus code -->
+        <div class="member-box" id="memberBox">
+          <div class="member-box-title">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a2 2 0 012-2z"/></svg>
+            Member Bonus Code
+          </div>
+          <!-- Updated subtitle text per spec -->
+          <div class="member-box-sub">Early Access Members can apply an extra credit bonus. Enter your code below.</div>
+          <div class="member-input-row">
+            <!-- Placeholder updated to DISCOUNT CODE, e.g. text removed -->
+            <input type="text" id="codeInput" placeholder="DISCOUNT CODE" maxlength="20" onkeydown="if(event.key==='Enter')applyCode()" style="text-transform:uppercase;">
+            <button class="btn-apply" onclick="applyCode()">Apply</button>
+          </div>
+          <div class="code-fb" id="codeFb"></div>
+          <div class="code-badge" id="codeBadge">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <span id="badgeText"></span>
+            <span class="code-badge-remove" onclick="removeCode()">✕ Remove</span>
+          </div>
+        </div>
+
+        <!-- Value breakdown for current club -->
+        <!-- NOTE: condition NOT shown here per spec -->
+        <div class="breakdown" id="breakdownBox">
+          <div class="bd-title">Value Breakdown — Current Club</div>
+          <div id="bdRows"></div>
+        </div>
+
+        <!-- Previously-added clubs cart -->
+        <div class="cart-section" id="cartSection">
+          <div class="cart-section-title">All Clubs in This Trade-In</div>
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th>Club</th>
+                <th>Condition</th>
+                <th style="text-align:right;">Value</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cartRows"></tbody>
+          </table>
+          <div class="cart-total-bar">
+            <span class="ct-label">Combined offer</span>
+            <span class="ct-val" id="cartTotal">—</span>
+          </div>
+        </div>
+
+        <!-- Add another club -->
+        <button class="btn-add-another" id="addAnotherBtn" onclick="addAnotherClub()">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+          Add Another Club to This Trade-In
+        </button>
+
+        <div class="s2-acts">
+          <button class="btn-ghost" onclick="goStep(1)">← Start Over</button>
+          <button class="btn-go"    onclick="proceedFromStep2()">Add &amp; Proceed to Trade-In →</button>
+        </div>
+
+      </div><!-- /step2 -->
+
+      <!-- ══ STEP 3: Complete ══ -->
+      <div class="form-step" id="step3">
+        <div id="s3Form">
+          <div class="s3-title">Complete Your Trade-In</div>
+          <div class="s3-sub">Your quote is ready. Fill in your details and we'll be in touch.</div>
+
+          <!-- Quote summary — single or multi-club -->
+          <div class="quote-summary" id="quoteSumm"></div>
+
+          <!-- Contact fields -->
+          <div class="f-field">
+            <label>Full Name *</label>
+            <input type="text" id="tName" placeholder="Your full name">
+          </div>
+
+          <div class="f-field">
+            <label>Email Address *</label>
+            <input type="email" id="tEmail" placeholder="you@example.com">
+            <!-- Helper text: shipping label notice -->
+            <div class="field-hint">
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              Shipping label will be emailed to you
+            </div>
+          </div>
+
+          <div class="f-field">
+            <label>Phone (optional)</label>
+            <input type="tel" id="tPhone" placeholder="(555) 000-0000">
+          </div>
+
+          <!-- Store Credit fields (address + collection date) -->
+          <div class="credit-box" id="creditBox">
+            <div class="credit-box-title">Store Credit Delivery Details</div>
+
+            <div class="f-field">
+              <label>Address *</label>
+              <input type="text" id="tCreditAddr" placeholder="Street, city, postcode">
+            </div>
+
+            <div class="f-field" style="margin-bottom:0">
+              <label>Preferred Courier Collection Date *</label>
+              <input type="date" id="tCreditDate">
+            </div>
+          </div>
+
+          <!-- Cash-only fields -->
+          <div class="cash-box" id="cashBox">
+            <div class="cash-box-title">Cash Payment Details Required</div>
+
+            <div class="f-field">
+              <label>Address *</label>
+              <input type="text" id="tAddr" placeholder="Street, city, postcode">
+            </div>
+
+            <div class="f-field">
+              <label>BSB *</label>
+              <input type="text" id="tBSB" placeholder="e.g. 062-000">
+            </div>
+
+            <div class="f-field">
+              <label>Account Number *</label>
+              <input type="text" id="tAcctNum" placeholder="e.g. 12345678">
+            </div>
+
+            <div class="f-field">
+              <label>Preferred Courier Collection Date *</label>
+              <input type="date" id="tDate">
+            </div>
+          </div>
+
+          <div class="f-field">
+            <label>Box Measurements *</label>
+            <input type="text" id="tBoxMeasure" placeholder="e.g. 110cm × 14cm × 14cm">
+          </div>
+
+          <!-- Packing note directly below Box Measurements -->
+          <div class="shipping-warning">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <span><strong>Packaging note:</strong> Size of box required to ship cannot exceed <strong>120cm &times; 15cm &times; 15cm</strong>. If the box is too large for courier, an added charge will occur.</span>
+          </div>
+
+          <div class="err" id="s3err">Please fill in all required fields.</div>
+
+          <div class="s3-acts">
+            <button class="btn-ghost" onclick="goStep(2)">← Back</button>
+            <button class="btn-go"    onclick="submitTrade()">Submit Trade-In ✓</button>
+          </div>
+        </div><!-- /s3Form -->
+
+        <!-- Success state -->
+        <div class="success-panel" id="successPanel">
+          <div class="success-icon">✓</div>
+          <h3>Trade-In Submitted!</h3>
+          <p>We've received your request and will send a prepaid shipping label within 1 business day.</p>
+          <p style="font-size:13px;color:var(--muted);margin-top:-12px;">
+            Reference: <strong id="successRef" style="color:var(--green);letter-spacing:.5px;"></strong>
+          </p>
+          <button class="btn-primary" onclick="resetAll()" style="margin:0 auto;">Start Another Quote</button>
+        </div>
+      </div><!-- /step3 -->
+
+    </div><!-- /form-body -->
+  </div><!-- /card -->
+</div><!-- /main -->
+
+<!-- PERKS BAR — only Customer Service + Secure Payment remain -->
+<div class="perks-bar">
+  <div class="perk">
+    <div class="perk-ico">🎧</div>
+    <div class="perk-name">Customer Service</div>
+    <div class="perk-desc">Our team is available to answer questions and make recommendations at <a href="/cdn-cgi/l/email-protection#28494c454146684a4d5c5c4d5a4f47444e4b445d4a5b065b404758"><span class="__cf_email__" data-cfemail="7d1c191014133d1f180909180f1a12111b1e11081f0e530e15120d">[email&#160;protected]</span></a></div>
+  </div>
+  <div class="perk">
+    <div class="perk-ico">🔒</div>
+    <div class="perk-name">Secure Payment</div>
+    <div class="perk-desc">Your payment information is processed securely</div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+/* ═══════════════════════════════════════════════════════════
+   PRICING DATABASE
+   Each entry has 4 independent cash prices per condition.
+   Store credit = cash × 1.10  (+ member bonus applied first)
+   Missing club deduction = 10% per club, max 30% (Iron Sets)
+═══════════════════════════════════════════════════════════ */
+const DB = {
+  creditBonus:    0.10,
+  missingPerClub: 0.10,
+  missingCap:     0.30,
+
+  codes: {
+    "MEMBER10": { bonus: 0.10, label: "Member 10% bonus" },
+    "MEMBER15": { bonus: 0.15, label: "Member 15% bonus" },
+    "MEMBER20": { bonus: 0.20, label: "Member 20% bonus" },
+    "VIP25":    { bonus: 0.25, label: "VIP 25% bonus" },
+    "GOLD10":   { bonus: 0.10, label: "Gold member 10% bonus" },
+  },
+
+  types: ["Driver","Fairway Wood","Hybrid","Iron Set","Single Iron","Wedge","Putter"],
+
+  brands: {
+    "Driver":       ["TaylorMade","Callaway","Titleist","Ping","Cobra","Mizuno","Cleveland","Srixon","PXG","Wilson","XXIO"],
+    "Fairway Wood": ["TaylorMade","Callaway","Titleist","Ping","Cobra","Mizuno","Cleveland","Srixon","PXG","Wilson","XXIO"],
+    "Hybrid":       ["TaylorMade","Callaway","Titleist","Ping","Cobra","Mizuno","Cleveland","Srixon","PXG","Wilson","XXIO"],
+    "Iron Set":     ["TaylorMade","Callaway","Titleist","Ping","Cobra","Mizuno","Cleveland","Srixon","PXG","Wilson"],
+    "Single Iron":  ["TaylorMade","Callaway","Titleist","Ping","Cobra","Mizuno","Cleveland","Srixon","PXG","Wilson"],
+    "Wedge":        ["TaylorMade","Callaway","Titleist","Cleveland","Ping","Cobra","Mizuno","Srixon","PXG","Wilson"],
+    "Putter":       ["Scotty Cameron","Odyssey","TaylorMade","Ping","Cleveland","Bettinardi","PXG","Wilson","Callaway"],
+  },
+
+  models: {
+    "Driver|TaylorMade": [
+      {model:"Qi10 Max",         new:270, above_avg:210, avg:150, below_avg:90},
+      {model:"Qi10",             new:250, above_avg:195, avg:140, below_avg:85},
+      {model:"Stealth 2 Plus",   new:220, above_avg:170, avg:120, below_avg:70},
+      {model:"Stealth 2",        new:195, above_avg:150, avg:105, below_avg:60},
+      {model:"Stealth 2 HD",     new:200, above_avg:155, avg:110, below_avg:65},
+      {model:"SIM2 Max",         new:145, above_avg:112, avg:79,  below_avg:46},
+      {model:"SIM2",             new:135, above_avg:105, avg:74,  below_avg:42},
+      {model:"SIM Max",          new:115, above_avg:89,  avg:63,  below_avg:36},
+      {model:"M6",               new:85,  above_avg:66,  avg:46,  below_avg:26},
+      {model:"M5",               new:80,  above_avg:62,  avg:44,  below_avg:25},
+      {model:"M4",               new:65,  above_avg:50,  avg:35,  below_avg:20},
+      {model:"M2 (2017)",        new:50,  above_avg:39,  avg:27,  below_avg:15},
+    ],
+    "Driver|Callaway": [
+      {model:"Paradym Ai Smoke Max D",   new:295, above_avg:229, avg:163, below_avg:97},
+      {model:"Paradym Ai Smoke Max",     new:285, above_avg:221, avg:158, below_avg:94},
+      {model:"Paradym Ai Smoke",         new:270, above_avg:209, avg:149, below_avg:89},
+      {model:"Paradym Triple Diamond",   new:250, above_avg:194, avg:138, below_avg:82},
+      {model:"Paradym Max",              new:230, above_avg:178, avg:127, below_avg:76},
+      {model:"Rogue ST Max",             new:180, above_avg:140, avg:99,  below_avg:59},
+      {model:"Rogue ST Triple Diamond",  new:195, above_avg:151, avg:107, below_avg:64},
+      {model:"Epic Max",                 new:140, above_avg:108, avg:77,  below_avg:46},
+      {model:"Mavrik Max",               new:115, above_avg:89,  avg:63,  below_avg:38},
+      {model:"Epic Flash",               new:90,  above_avg:70,  avg:49,  below_avg:29},
+      {model:"Big Bertha B21",           new:75,  above_avg:58,  avg:41,  below_avg:24},
+    ],
+    "Driver|Titleist": [
+      {model:"TSR4",   new:280, above_avg:217, avg:154, below_avg:92},
+      {model:"TSR3",   new:265, above_avg:205, avg:146, below_avg:87},
+      {model:"TSR2",   new:255, above_avg:198, avg:141, below_avg:84},
+      {model:"TSi3",   new:200, above_avg:155, avg:110, below_avg:66},
+      {model:"TSi2",   new:190, above_avg:147, avg:105, below_avg:62},
+      {model:"TS3",    new:135, above_avg:105, avg:74,  below_avg:44},
+      {model:"TS2",    new:125, above_avg:97,  avg:69,  below_avg:41},
+      {model:"917 D3", new:80,  above_avg:62,  avg:44,  below_avg:26},
+      {model:"917 D2", new:75,  above_avg:58,  avg:41,  below_avg:24},
+    ],
+    "Driver|Ping": [
+      {model:"G440 Max",      new:275, above_avg:213, avg:152, below_avg:90},
+      {model:"G440 LST",      new:265, above_avg:205, avg:146, below_avg:87},
+      {model:"G430 Max 10K",  new:245, above_avg:190, avg:135, below_avg:80},
+      {model:"G430 Max",      new:235, above_avg:182, avg:130, below_avg:77},
+      {model:"G430 LST",      new:230, above_avg:178, avg:127, below_avg:76},
+      {model:"G425 Max",      new:185, above_avg:143, avg:102, below_avg:61},
+      {model:"G410 Plus",     new:150, above_avg:116, avg:83,  below_avg:49},
+      {model:"G400 Max",      new:110, above_avg:85,  avg:61,  below_avg:36},
+    ],
+    "Driver|Cobra": [
+      {model:"Darkspeed LS",  new:240, above_avg:186, avg:132, below_avg:79},
+      {model:"Darkspeed Max", new:235, above_avg:182, avg:130, below_avg:77},
+      {model:"Aerojet Max",   new:190, above_avg:147, avg:105, below_avg:62},
+      {model:"Aerojet LS",    new:195, above_avg:151, avg:107, below_avg:64},
+      {model:"LTDx Max",      new:160, above_avg:124, avg:88,  below_avg:52},
+      {model:"Radspeed XB",   new:115, above_avg:89,  avg:63,  below_avg:38},
+    ],
+    "Driver|PXG": [
+      {model:"0811 XF GEN6", new:280, above_avg:217, avg:154, below_avg:92},
+      {model:"0811 X GEN6",  new:270, above_avg:209, avg:149, below_avg:89},
+      {model:"0811 GEN6",    new:260, above_avg:201, avg:143, below_avg:85},
+      {model:"0811 GEN5",    new:200, above_avg:155, avg:110, below_avg:66},
+      {model:"0811 GEN4",    new:145, above_avg:112, avg:80,  below_avg:47},
+    ],
+    "Driver|XXIO": [
+      {model:"XXIO 13", new:280, above_avg:217, avg:154, below_avg:92},
+      {model:"XXIO 12", new:240, above_avg:186, avg:132, below_avg:79},
+      {model:"XXIO 11", new:200, above_avg:155, avg:110, below_avg:66},
+    ],
+    "Driver|Mizuno": [
+      {model:"ST-Z 220", new:220, above_avg:170, avg:121, below_avg:71},
+      {model:"ST-X 220", new:210, above_avg:163, avg:116, below_avg:68},
+    ],
+    "Driver|Cleveland": [
+      {model:"Launcher XL 2", new:130, above_avg:101, avg:71, below_avg:42},
+    ],
+    "Driver|Srixon": [
+      {model:"ZX7 Mk II", new:145, above_avg:112, avg:80, below_avg:47},
+      {model:"ZX5 Mk II", new:140, above_avg:108, avg:77, below_avg:45},
+    ],
+    "Driver|Wilson": [
+      {model:"Dynapower", new:100, above_avg:77, avg:55, below_avg:32},
+    ],
+    "Fairway Wood|TaylorMade": [
+      {model:"Qi10 Max Fairway",      new:175, above_avg:136, avg:96, below_avg:57},
+      {model:"Qi10 Fairway",          new:165, above_avg:128, avg:91, below_avg:54},
+      {model:"Stealth 2 HD Fairway",  new:150, above_avg:116, avg:83, below_avg:49},
+      {model:"Stealth 2 Fairway",     new:140, above_avg:108, avg:77, below_avg:46},
+      {model:"SIM2 Max Fairway",      new:120, above_avg:93,  avg:66, below_avg:39},
+      {model:"M6 Fairway",            new:80,  above_avg:62,  avg:44, below_avg:26},
+    ],
+    "Fairway Wood|Callaway": [
+      {model:"Paradym Ai Smoke Fairway", new:170, above_avg:132, avg:94, below_avg:56},
+      {model:"Rogue ST Max Fairway",     new:135, above_avg:105, avg:74, below_avg:44},
+      {model:"Epic Max Fairway",         new:115, above_avg:89,  avg:63, below_avg:38},
+    ],
+    "Fairway Wood|Titleist": [
+      {model:"TSR3 Fairway", new:180, above_avg:140, avg:99, below_avg:59},
+      {model:"TSR2 Fairway", new:170, above_avg:132, avg:94, below_avg:56},
+    ],
+    "Fairway Wood|Ping": [
+      {model:"G440 Max Fairway", new:185, above_avg:143, avg:102, below_avg:61},
+      {model:"G430 Max Fairway", new:165, above_avg:128, avg:91,  below_avg:54},
+      {model:"G425 Max Fairway", new:140, above_avg:108, avg:77,  below_avg:46},
+    ],
+    "Fairway Wood|Cobra": [
+      {model:"Darkspeed Max Fairway", new:160, above_avg:124, avg:88, below_avg:52},
+      {model:"Aerojet Max Fairway",   new:140, above_avg:108, avg:77, below_avg:46},
+    ],
+    "Fairway Wood|XXIO": [
+      {model:"XXIO 13 Fairway", new:200, above_avg:155, avg:110, below_avg:65},
+    ],
+    "Hybrid|TaylorMade": [
+      {model:"Qi10 Rescue",      new:140, above_avg:108, avg:77, below_avg:46},
+      {model:"Stealth 2 Rescue", new:120, above_avg:93,  avg:66, below_avg:39},
+      {model:"SIM2 Max Rescue",  new:100, above_avg:77,  avg:55, below_avg:33},
+    ],
+    "Hybrid|Callaway": [
+      {model:"Paradym Ai Smoke Max Hybrid", new:135, above_avg:105, avg:74, below_avg:44},
+      {model:"Rogue ST Max Hybrid",         new:110, above_avg:85,  avg:61, below_avg:36},
+      {model:"Epic Max Hybrid",             new:90,  above_avg:70,  avg:49, below_avg:29},
+    ],
+    "Hybrid|Titleist": [
+      {model:"TSR2 Hybrid", new:145, above_avg:112, avg:80, below_avg:47},
+      {model:"TSi2 Hybrid", new:120, above_avg:93,  avg:66, below_avg:39},
+    ],
+    "Hybrid|Ping": [
+      {model:"G440 Hybrid", new:150, above_avg:116, avg:83, below_avg:49},
+      {model:"G430 Hybrid", new:135, above_avg:105, avg:74, below_avg:44},
+      {model:"G425 Hybrid", new:115, above_avg:89,  avg:63, below_avg:38},
+      {model:"G410 Hybrid", new:95,  above_avg:74,  avg:52, below_avg:31},
+    ],
+    "Hybrid|Cobra": [
+      {model:"Darkspeed Hybrid", new:130, above_avg:101, avg:71, below_avg:43},
+      {model:"Aerojet Hybrid",   new:115, above_avg:89,  avg:63, below_avg:38},
+    ],
+    "Hybrid|XXIO": [
+      {model:"XXIO 13 Hybrid", new:175, above_avg:136, avg:96, below_avg:57},
+    ],
+    "Iron Set|TaylorMade": [
+      {model:"Qi35 Irons",          new:550, above_avg:426, avg:303, below_avg:179},
+      {model:"P790 (2023)",         new:540, above_avg:419, avg:297, below_avg:176},
+      {model:"P770 (2023)",         new:520, above_avg:403, avg:286, below_avg:169},
+      {model:"P7MC",                new:490, above_avg:380, avg:270, below_avg:159},
+      {model:"P7MB",                new:470, above_avg:364, avg:259, below_avg:153},
+      {model:"Stealth2 HD Irons",   new:380, above_avg:295, avg:209, below_avg:124},
+      {model:"Stealth2 Irons",      new:360, above_avg:279, avg:198, below_avg:117},
+      {model:"SIM2 Max OS Irons",   new:290, above_avg:225, avg:160, below_avg:94},
+      {model:"M6 Irons",            new:220, above_avg:171, avg:121, below_avg:72},
+      {model:"M4 Irons",            new:190, above_avg:147, avg:105, below_avg:62},
+      {model:"M2 Irons (2016)",     new:130, above_avg:101, avg:71,  below_avg:43},
+    ],
+    "Iron Set|Callaway": [
+      {model:"Apex Pro 24 Irons",      new:580, above_avg:450, avg:319, below_avg:189},
+      {model:"Apex 24 Irons",          new:540, above_avg:419, avg:297, below_avg:176},
+      {model:"Paradym Ai Smoke Irons", new:510, above_avg:395, avg:281, below_avg:166},
+      {model:"Rogue ST Max OS Irons",  new:330, above_avg:256, avg:182, below_avg:107},
+      {model:"Mavrik Max Irons",       new:240, above_avg:186, avg:132, below_avg:78},
+      {model:"Big Bertha B21 Irons",   new:200, above_avg:155, avg:110, below_avg:65},
+    ],
+    "Iron Set|Titleist": [
+      {model:"T350 Irons",          new:510, above_avg:395, avg:281, below_avg:166},
+      {model:"T300 Irons (2023)",   new:530, above_avg:411, avg:292, below_avg:172},
+      {model:"T200 Irons (2023)",   new:560, above_avg:434, avg:308, below_avg:182},
+      {model:"T150 Irons",          new:520, above_avg:403, avg:286, below_avg:169},
+      {model:"T100 Irons (2023)",   new:540, above_avg:419, avg:297, below_avg:176},
+      {model:"AP2 (718)",           new:300, above_avg:233, avg:165, below_avg:98},
+      {model:"AP1 (718)",           new:240, above_avg:186, avg:132, below_avg:78},
+    ],
+    "Iron Set|Ping": [
+      {model:"G730 Irons", new:540, above_avg:419, avg:297, below_avg:176},
+      {model:"G430 Irons", new:480, above_avg:372, avg:264, below_avg:156},
+      {model:"G425 Irons", new:380, above_avg:295, avg:209, below_avg:124},
+      {model:"G410 Irons", new:300, above_avg:233, avg:165, below_avg:98},
+      {model:"G400 Irons", new:240, above_avg:186, avg:132, below_avg:78},
+    ],
+    "Iron Set|Mizuno": [
+      {model:"JPX925 Hot Metal Pro", new:480, above_avg:372, avg:264, below_avg:156},
+      {model:"JPX925 Hot Metal",     new:460, above_avg:357, avg:253, below_avg:150},
+      {model:"JPX923 Hot Metal Pro", new:420, above_avg:326, avg:231, below_avg:137},
+      {model:"JPX923 Hot Metal",     new:400, above_avg:310, avg:220, below_avg:130},
+      {model:"MP-20 HMB",            new:380, above_avg:295, avg:209, below_avg:124},
+    ],
+    "Iron Set|Cleveland": [
+      {model:"ZXi MAX Irons",     new:360, above_avg:279, avg:198, below_avg:117},
+      {model:"Launcher XL Irons", new:280, above_avg:217, avg:154, below_avg:91},
+    ],
+    "Iron Set|PXG": [
+      {model:"0311 XP GEN6 Irons", new:580, above_avg:450, avg:319, below_avg:189},
+      {model:"0311 P GEN6 Irons",  new:600, above_avg:465, avg:330, below_avg:195},
+      {model:"0211 XCOR2 Irons",   new:440, above_avg:341, avg:242, below_avg:143},
+      {model:"0311 GEN4 Irons",    new:350, above_avg:271, avg:193, below_avg:114},
+    ],
+    "Iron Set|Srixon": [
+      {model:"ZX7 Mk II Irons", new:460, above_avg:357, avg:253, below_avg:150},
+      {model:"ZX5 Mk II Irons", new:400, above_avg:310, avg:220, below_avg:130},
+    ],
+    "Iron Set|Wilson": [
+      {model:"D9 Forged Irons", new:320, above_avg:248, avg:176, below_avg:104},
+      {model:"D9 Irons",        new:250, above_avg:194, avg:138, below_avg:81},
+    ],
+    "Single Iron|TaylorMade": [
+      {model:"P790 Single Iron", new:65, above_avg:50, avg:36, below_avg:21},
+      {model:"P770 Single Iron", new:60, above_avg:46, avg:33, below_avg:19},
+      {model:"Stealth2 Iron",    new:50, above_avg:39, avg:27, below_avg:16},
+    ],
+    "Single Iron|Callaway": [
+      {model:"Apex 24 Single Iron",          new:70, above_avg:54, avg:39, below_avg:23},
+      {model:"Paradym Ai Smoke Single Iron", new:65, above_avg:50, avg:36, below_avg:21},
+    ],
+    "Single Iron|Titleist": [
+      {model:"T350 Single Iron", new:65, above_avg:50, avg:36, below_avg:21},
+      {model:"T200 Single Iron", new:70, above_avg:54, avg:39, below_avg:23},
+    ],
+    "Single Iron|Ping": [
+      {model:"G730 Single Iron", new:68, above_avg:53, avg:37, below_avg:22},
+      {model:"G430 Single Iron", new:58, above_avg:45, avg:32, below_avg:19},
+    ],
+    "Single Iron|Mizuno": [
+      {model:"JPX925 Hot Metal Single", new:60, above_avg:46, avg:33, below_avg:19},
+    ],
+    "Single Iron|PXG": [
+      {model:"0311 XP GEN6 Single Iron", new:72, above_avg:56, avg:40, below_avg:23},
+    ],
+    "Single Iron|Cobra":    [{model:"King Utility Iron",      new:55, above_avg:43, avg:30, below_avg:18}],
+    "Single Iron|Cleveland":[{model:"Launcher XL Single",     new:42, above_avg:33, avg:23, below_avg:14}],
+    "Single Iron|Srixon":   [{model:"ZX Utility Iron",        new:58, above_avg:45, avg:32, below_avg:19}],
+    "Single Iron|Wilson":   [{model:"D9 Single Iron",         new:38, above_avg:30, avg:21, below_avg:12}],
+    "Wedge|Titleist": [
+      {model:"Vokey SM10", new:95, above_avg:74, avg:52, below_avg:31},
+      {model:"Vokey SM9",  new:78, above_avg:60, avg:43, below_avg:25},
+      {model:"Vokey SM8",  new:62, above_avg:48, avg:34, below_avg:20},
+      {model:"Vokey SM7",  new:50, above_avg:39, avg:27, below_avg:16},
+    ],
+    "Wedge|Cleveland": [
+      {model:"RTX 6 ZipCore",   new:82, above_avg:64, avg:45, below_avg:27},
+      {model:"RTX 6 Full Face", new:88, above_avg:68, avg:48, below_avg:29},
+      {model:"RTX ZipCore",     new:65, above_avg:50, avg:36, below_avg:21},
+      {model:"CBX 4",           new:72, above_avg:56, avg:40, below_avg:23},
+    ],
+    "Wedge|TaylorMade": [
+      {model:"MG4",        new:92, above_avg:71, avg:51, below_avg:30},
+      {model:"MG3",        new:75, above_avg:58, avg:41, below_avg:24},
+      {model:"Hi-Toe 4",   new:95, above_avg:74, avg:52, below_avg:31},
+      {model:"Hi-Toe RAW", new:85, above_avg:66, avg:47, below_avg:28},
+    ],
+    "Wedge|Callaway": [
+      {model:"Jaws Raw Full Face", new:88, above_avg:68, avg:48, below_avg:29},
+      {model:"Jaws Raw",           new:82, above_avg:64, avg:45, below_avg:27},
+      {model:"Jaws MD5",           new:68, above_avg:53, avg:37, below_avg:22},
+    ],
+    "Wedge|Ping": [
+      {model:"S159 Wedge", new:88, above_avg:68, avg:48, below_avg:29},
+      {model:"Glide 4.0",  new:72, above_avg:56, avg:40, below_avg:23},
+      {model:"Glide 3.0",  new:58, above_avg:45, avg:32, below_avg:19},
+    ],
+    "Wedge|Mizuno": [
+      {model:"T24 Wedge", new:92, above_avg:71, avg:51, below_avg:30},
+      {model:"T22 Wedge", new:78, above_avg:60, avg:43, below_avg:25},
+    ],
+    "Wedge|PXG":    [{model:"0311 Sugar Daddy III Wedge", new:100, above_avg:77, avg:55, below_avg:33}],
+    "Wedge|Cobra":  [{model:"King Cobra Wedge",           new:68,  above_avg:53, avg:37, below_avg:22}],
+    "Wedge|Srixon": [{model:"ZX Wedge",                   new:72,  above_avg:56, avg:40, below_avg:23}],
+    "Wedge|Wilson": [{model:"Staff Model Wedge",           new:62,  above_avg:48, avg:34, below_avg:20}],
+    "Putter|Scotty Cameron": [
+      {model:"Phantom 11.5",             new:310, above_avg:240, avg:171, below_avg:101},
+      {model:"Phantom 11",               new:295, above_avg:229, avg:162, below_avg:96},
+      {model:"Phantom X 11",             new:275, above_avg:213, avg:151, below_avg:90},
+      {model:"Special Select Newport 2", new:250, above_avg:194, avg:138, below_avg:81},
+      {model:"Special Select Fastback",  new:240, above_avg:186, avg:132, below_avg:78},
+      {model:"Futura X7M",               new:185, above_avg:143, avg:102, below_avg:60},
+      {model:"GoLo 5",                   new:100, above_avg:77,  avg:55,  below_avg:33},
+    ],
+    "Putter|Odyssey": [
+      {model:"Ai-ONE #7 CH",        new:175, above_avg:136, avg:96, below_avg:57},
+      {model:"Ai-ONE Rossie",       new:168, above_avg:130, avg:92, below_avg:55},
+      {model:"Stroke Lab Black #7", new:140, above_avg:108, avg:77, below_avg:46},
+      {model:"White Hot OG #1",     new:110, above_avg:85,  avg:61, below_avg:36},
+      {model:"2-Ball Ten",          new:105, above_avg:81,  avg:58, below_avg:34},
+    ],
+    "Putter|TaylorMade": [
+      {model:"Spider GT Max",             new:175, above_avg:136, avg:96, below_avg:57},
+      {model:"Spider EX Red",             new:145, above_avg:112, avg:80, below_avg:47},
+      {model:"TP Hydro Blast Del Monte",  new:165, above_avg:128, avg:91, below_avg:54},
+      {model:"Truss TB2",                 new:115, above_avg:89,  avg:63, below_avg:38},
+    ],
+    "Putter|Ping": [
+      {model:"PLD Milled DS72",  new:320, above_avg:248, avg:176, below_avg:104},
+      {model:"PLD Milled Anser", new:300, above_avg:233, avg:165, below_avg:98},
+      {model:"G Le3 Fetch",      new:135, above_avg:105, avg:74,  below_avg:44},
+      {model:"Sigma2 Anser",     new:115, above_avg:89,  avg:63,  below_avg:38},
+    ],
+    "Putter|Bettinardi": [
+      {model:"2023 Studio Stock 35", new:380, above_avg:295, avg:209, below_avg:124},
+      {model:"Studio Stock 9",       new:310, above_avg:240, avg:171, below_avg:101},
+    ],
+    "Putter|Cleveland": [
+      {model:"HB Soft Premier Milled", new:130, above_avg:101, avg:71, below_avg:43},
+      {model:"HB Soft Milled #10",     new:120, above_avg:93,  avg:66, below_avg:39},
+    ],
+    "Putter|PXG": [
+      {model:"0311 Milled Gen2",          new:290, above_avg:225, avg:160, below_avg:94},
+      {model:"Battle Ready II Bat Attack", new:250, above_avg:194, avg:138, below_avg:81},
+    ],
+    "Putter|Wilson":   [{model:"Staff Model Putter",         new:120, above_avg:93, avg:66, below_avg:39}],
+    "Putter|Callaway": [{model:"Odyssey Ai-ONE Milled One",  new:175, above_avg:136, avg:96, below_avg:57}],
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════
+   APP STATE
+═══════════════════════════════════════════════════════════ */
+const COND_LABELS = {new:"New", above_avg:"Above Average", avg:"Average", below_avg:"Below Average"};
+
+// Current club being configured on step 1/2
+let S = {
+  type:"", brand:"", model:"", cond:"", condLabel:"", entry:null,
+  missingClubs:[], valueType:"credit",
+  cashVal:0, creditVal:0, notFound:false,
+  memberCode:null, memberBonus:0, memberLabel:"",
+};
+
+// Cart: finalized clubs waiting for submission
+// Each item: { id, brand, model, cond, condLabel, cashVal, creditVal, notFound, ironCfg, missingClubs }
+let cart = [];
+let cartIdSeq = 0;
+let missOn = false;
+
+/* ── INIT ── */
+(function(){
+  const ct = document.getElementById("clubType");
+  DB.types.forEach(t => {
+    const o = document.createElement("option"); o.value=t; o.textContent=t; ct.appendChild(o);
+  });
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+  document.getElementById("tDate").min = tomorrowStr;
+  document.getElementById("tCreditDate").min = tomorrowStr;
+})();
+
+/* ── HELPERS ── */
+const ge = id => document.getElementById(id);
+const fmt = v => "$" + Math.round(v).toLocaleString();
+
+function rSel(id, ph) {
+  const el = ge(id); el.innerHTML = `<option value="">${ph}</option>`; el.disabled = true;
+}
+
+/* ── DROPDOWNS ── */
+function onTypeChange(){
+  S.type = ge("clubType").value;
+  S.brand=""; S.model=""; S.entry=null;
+  rSel("brand","Select brand"); rSel("model","Select model");
+  ge("ironExtra").style.display="none";
+  if(!S.type){ ge("brand").disabled=true; return; }
+  const bEl=ge("brand");
+  (DB.brands[S.type]||[]).forEach(b=>{ const o=document.createElement("option"); o.value=b; o.textContent=b; bEl.appendChild(o); });
+  bEl.disabled=false;
+}
+
+function onBrandChange(){
+  S.brand = ge("brand").value;
+  S.model=""; S.entry=null;
+  rSel("model","Select model");
+  ge("ironExtra").style.display="none";
+  if(!S.brand){ ge("model").disabled=true; return; }
+  const mEl=ge("model");
+  const arr = DB.models[S.type+"|"+S.brand]||[];
+  if(arr.length){ arr.forEach(m=>{ const o=document.createElement("option"); o.value=m.model; o.textContent=m.model; mEl.appendChild(o); }); }
+  else { const o=document.createElement("option"); o.value="__other__"; o.textContent="Other / Not Listed"; mEl.appendChild(o); }
+  mEl.disabled=false;
+}
+
+function onModelChange(){
+  S.model = ge("model").value;
+  if(!S.model){ ge("ironExtra").style.display="none"; return; }
+  S.entry = (DB.models[S.type+"|"+S.brand]||[]).find(m=>m.model===S.model)||null;
+  ge("ironExtra").style.display = (S.type==="Iron Set" && S.model!=="__other__") ? "block" : "none";
+}
+
+/* ── CONDITION ── */
+function selCond(c, el){
+  S.cond=c; S.condLabel=COND_LABELS[c];
+  document.querySelectorAll(".cond-card").forEach(e=>e.classList.remove("sel"));
+  el.classList.add("sel");
+}
+
+/* ── MISSING CLUBS ── */
+function toggleMissing(){
+  missOn=!missOn;
+  ge("missTgl").classList.toggle("on",missOn);
+  ge("missLbl").textContent = missOn ? "Yes — some clubs are missing" : "No — all clubs present";
+  ge("missChipsWrap").classList.toggle("show",missOn);
+  if(missOn && !ge("missChips").children.length) buildChips();
+}
+function buildChips(){
+  const c=ge("missChips");
+  ["1","2","3","4","5","6","7","8","9","PW","AW","GW","SW","LW"].forEach(n=>{
+    const d=document.createElement("div"); d.className="chip"; d.textContent=n; d.dataset.c=n;
+    d.onclick=()=>d.classList.toggle("on"); c.appendChild(d);
+  });
+}
+function getMissing(){ return missOn ? [...document.querySelectorAll(".chip.on")].map(c=>c.dataset.c) : []; }
+
+/* ── STEP 1 SUBMIT ── */
+function submitStep1(){
+  const err=ge("s1err");
+  if(!S.type||!S.brand||!S.model||!S.cond){ err.classList.add("show"); return; }
+  err.classList.remove("show");
+  S.missingClubs=getMissing();
+  // Reset only the code UI if no code is active yet; preserve applied code across clubs
+  if(!S.memberCode){
+    ge("codeInput").value="";
+    ge("codeFb").className="code-fb";
+    ge("codeBadge").classList.remove("show");
+  }
+  compute();
+  goStep(2);
+  renderStep2();
+}
+
+/* ── COMPUTE ── */
+function compute(){
+  if(!S.entry||S.model==="__other__"){ S.notFound=true; S.cashVal=0; S.creditVal=0; return; }
+  S.notFound=false;
+  const raw=S.entry[S.cond]||0;
+  const mc=S.missingClubs.length;
+  const deductFrac=Math.min(mc*DB.missingPerClub, DB.missingCap);
+  const afterMiss=raw*(1-deductFrac);
+  const memberExtra=afterMiss*S.memberBonus;
+  const afterMember=afterMiss+memberExtra;
+  S.cashVal=Math.round(afterMember);
+  S.creditVal=Math.round(afterMember*(1+DB.creditBonus));
+}
+
+/* ── RENDER STEP 2 ── */
+function renderStep2(){
+  ge("resClub").textContent = S.brand+" "+S.model;
+  if(S.notFound){
+    ge("resAmt").textContent="—";
+    ge("notFound").style.display="block";
+    ge("breakdownBox").style.display="none";
+    ge("memberBox").style.display="none";
+  } else {
+    ge("notFound").style.display="none";
+    ge("breakdownBox").style.display="block";
+    ge("memberBox").style.display="block";
+    const dv = S.valueType==="credit" ? S.creditVal : S.cashVal;
+    ge("resAmt").textContent=fmt(dv);
+    renderBreakdown(dv);
+  }
+  renderCart();
+}
+
+function renderBreakdown(dv){
+  // Condition is NOT shown in the breakdown per spec
+  const raw=S.entry[S.cond]||0;
+  const mc=S.missingClubs.length;
+  const deductFrac=Math.min(mc*DB.missingPerClub,DB.missingCap);
+  const missingAmt=Math.round(raw*deductFrac);
+  const afterMiss=raw-missingAmt;
+  const memberExtra=Math.round(afterMiss*S.memberBonus);
+  const afterMember=afterMiss+memberExtra;
+  const creditExtra=Math.round(afterMember*DB.creditBonus);
+
+  let rows=[];
+  rows.push({k:"Adjusted value", v:fmt(raw), cls:""});
+  if(mc>0)           rows.push({k:`Missing clubs (${mc}) deduction`, v:`−${fmt(missingAmt)}`, cls:"red-v"});
+  if(S.memberBonus>0) rows.push({k:S.memberLabel, v:`+${fmt(memberExtra)}`, cls:"green-v"});
+  if(S.valueType==="credit") rows.push({k:"Store credit bonus (+10%)", v:`+${fmt(creditExtra)}`, cls:"green-v"});
+  rows.push({k:"Total Offer", v:fmt(dv), cls:"", total:true});
+
+  ge("bdRows").innerHTML=rows.map(r=>
+    `<div class="bd-row${r.total?" total":""}">
+      <span class="bd-k">${r.k}</span>
+      <span class="bd-v ${r.cls||""}">${r.v}</span>
+    </div>`
+  ).join("");
+}
+
+/* ── CART RENDERING ── */
+function renderCart(){
+  const vtype=S.valueType;
+  const hasItems=cart.length>0;
+  ge("cartSection").classList.toggle("show", hasItems);
+  ge("addAnotherBtn").classList.toggle("show", hasItems);
+
+  if(!hasItems) return;
+
+  const cartTotal=cart.reduce((sum,c)=>sum+(vtype==="credit"?c.creditVal:c.cashVal),0);
+  ge("cartTotal").textContent=fmt(cartTotal);
+
+  ge("cartRows").innerHTML=cart.map(c=>{
+    const val=vtype==="credit"?c.creditVal:c.cashVal;
+    return `<tr>
+      <td class="td-club">${c.brand} ${c.model}</td>
+      <td class="td-cond">${c.condLabel}</td>
+      <td class="td-val">${c.notFound?"Pending":fmt(val)}</td>
+      <td class="td-del"><button class="btn-del-club" onclick="removeFromCart(${c.id})" title="Remove">×</button></td>
+    </tr>`;
+  }).join("");
+}
+
+function removeFromCart(id){
+  cart=cart.filter(c=>c.id!==id);
+  renderCart();
+  // If cart is empty and we somehow ended up with 0 items, update total display too
+}
+
+/* ── PROCEED FROM STEP 2 ── */
+// Adds current club to cart then moves to step 3
+function proceedFromStep2(){
+  addCurrentToCart();
+  goStep(3);
+  buildStep3();
+}
+
+function addCurrentToCart(){
+  cart.push({
+    id: ++cartIdSeq,
+    type: S.type,
+    brand: S.brand,
+    model: S.model,
+    cond: S.cond,
+    condLabel: S.condLabel,
+    cashVal: S.cashVal,
+    creditVal: S.creditVal,
+    notFound: S.notFound,
+    ironCfg: ge("ironCfg")?.value||"",
+    missingClubs: [...S.missingClubs],
+  });
+}
+
+/* ── ADD ANOTHER CLUB ── */
+// Saves current club to cart, returns user to step 1 with fields reset
+function addAnotherClub(){
+  // Current club shown was already added if they previously clicked "Add & Proceed"
+  // Here we just go back to step 1 so they can configure another club
+  // The cart retains previously finished clubs
+  resetStep1Fields();
+  goStep(1);
+  if(window.innerWidth<640) ge("top").scrollIntoView({behavior:"smooth"});
+}
+
+function resetStep1Fields(){
+  S.type=""; S.brand=""; S.model=""; S.cond=""; S.condLabel=""; S.entry=null;
+  S.missingClubs=[]; S.cashVal=0; S.creditVal=0; S.notFound=false;
+  missOn=false;
+  ge("clubType").value="";
+  rSel("brand","Select brand"); rSel("model","Select model");
+  document.querySelectorAll(".cond-card").forEach(c=>c.classList.remove("sel"));
+  ge("ironExtra").style.display="none";
+  ge("missTgl").classList.remove("on");
+  ge("missChipsWrap").classList.remove("show");
+  ge("missLbl").textContent="No — all clubs present";
+  ge("missChips").innerHTML="";
+  ge("s1err").classList.remove("show");
+}
+
+/* ── VALUE TYPE TOGGLE ── */
+function setVtype(type){
+  S.valueType=type;
+  ge("vtCredit").classList.toggle("active",type==="credit");
+  ge("vtCash").classList.toggle("active",type==="cash");
+  compute(); renderStep2(); syncCashBox();
+}
+
+/* ── API CONFIG ── */
+// Set this to your deployed Vercel URL once live.
+// During local dev, use: http://localhost:3000
+const API_BASE = window.__TRADEIN_API__ || 'https://bettergolfclubs-api.vercel.app';
+
+/* ── MEMBER CODE ── */
+async function applyCode(){
+  const raw=ge("codeInput").value.trim().toUpperCase();
+  const fb=ge("codeFb"); const badge=ge("codeBadge");
+  fb.className="code-fb"; badge.classList.remove("show");
+
+  if(!raw){ fb.className="code-fb bad"; fb.textContent="Please enter a code."; return; }
+  if(S.memberCode===raw){ fb.className="code-fb bad"; fb.textContent="This code is already applied."; return; }
+
+  // Disable button while calling API
+  const btn=document.querySelector('.btn-apply');
+  const origText=btn.textContent;
+  btn.textContent="Checking…"; btn.disabled=true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/tradein/validate-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: raw }),
+    });
+    const data = await res.json();
+
+    if(!data.valid){
+      fb.className="code-fb bad";
+      fb.textContent = data.error || "Invalid code. Please check and try again.";
+      return;
+    }
+
+    S.memberCode=raw; S.memberBonus=data.bonus; S.memberLabel=data.label;
+    ge("badgeText").textContent=data.label;
+    badge.classList.add("show");
+    ge("codeInput").value="";
+    compute(); renderStep2();
+
+  } catch(e) {
+    console.error('[applyCode]', e);
+    fb.className="code-fb bad";
+    fb.textContent="Could not verify code. Please try again.";
+  } finally {
+    btn.textContent=origText; btn.disabled=false;
+  }
+}
+function removeCode(){
+  S.memberCode=null; S.memberBonus=0; S.memberLabel="";
+  ge("codeBadge").classList.remove("show");
+  ge("codeFb").className="code-fb";
+  ge("codeInput").value="";
+  compute(); renderStep2();
+}
+
+/* ── STEP NAVIGATION ── */
+function goStep(n){
+  [1,2,3].forEach(i=>{
+    ge(`step${i}`).classList.toggle("active",i===n);
+    ge(`sc${i}`).classList.toggle("active",i===n);
+    ge(`sc${i}`).classList.toggle("done",i<n);
+    ge(`sl${i}`).classList.toggle("active",i===n);
+    ge(`sl${i}`).classList.toggle("done",i<n);
+    const ln=ge(`ln${i}`);
+    if(ln) ln.classList.toggle("done",i<n);
+  });
+}
+
+/* ── BUILD STEP 3 ── */
+function buildStep3(){
+  const vtype=S.valueType;
+  // cart now has all clubs (current was added in proceedFromStep2)
+  const total=cart.reduce((s,c)=>s+(vtype==="credit"?c.creditVal:c.cashVal),0);
+
+  let html="";
+  if(cart.length===1){
+    // Single club — simple rows
+    const c=cart[0];
+    const val=vtype==="credit"?c.creditVal:c.cashVal;
+    html=`
+      <div class="qs-row"><span class="qs-k">Club</span><span class="qs-v">${c.brand} ${c.model}</span></div>
+      <div class="qs-row"><span class="qs-k">Condition</span><span class="qs-v">${c.condLabel}</span></div>
+      <div class="qs-row"><span class="qs-k">Payment Type</span><span class="qs-v">${vtype==="credit"?"Store Credit":"Cash"}</span></div>
+      <div class="qs-row"><span class="qs-k">Offer</span><span class="qs-v hl">${c.notFound?"Pending review":fmt(val)}</span></div>
+    `;
+  } else {
+    // Multiple clubs — itemised list
+    html+=`<div class="qs-row"><span class="qs-k">Payment Type</span><span class="qs-v">${vtype==="credit"?"Store Credit":"Cash"}</span></div>`;
+    html+=`<div style="padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:2px;">`;
+    cart.forEach(c=>{
+      const val=vtype==="credit"?c.creditVal:c.cashVal;
+      html+=`<div class="s3-club-row">
+        <span class="s3-club-name">${c.brand} ${c.model}<span class="s3-club-meta">(${c.condLabel})</span></span>
+        <span class="s3-club-val">${c.notFound?"Pending":fmt(val)}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+    html+=`<div class="qs-row" style="padding-top:8px;"><span class="qs-k">Combined Offer</span><span class="qs-v hl">${fmt(total)}</span></div>`;
+  }
+
+  ge("quoteSumm").innerHTML=html;
+  syncCashBox();
+}
+
+function syncCashBox(){
+  const vtype=S.valueType;
+  const cb=ge("cashBox");   if(cb) cb.classList.toggle("show", vtype==="cash");
+  const cr=ge("creditBox"); if(cr) cr.classList.toggle("show", vtype==="credit");
+}
+
+/* ── SUBMIT TRADE ── */
+async function submitTrade(){
+  const name        = ge("tName").value.trim();
+  const email       = ge("tEmail").value.trim();
+  const phone       = ge("tPhone").value.trim();
+  const boxMeasure  = ge("tBoxMeasure").value.trim();
+  const err         = ge("s3err");
+  const submitBtn   = document.querySelector('.s3-acts .btn-go');
+
+  // ── Client-side validation ───────────────────────────────────
+  if(!name || !email){
+    err.classList.add("show"); err.textContent="Please enter your name and email address."; return;
+  }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){
+    err.classList.add("show"); err.textContent="Please enter a valid email address."; return;
+  }
+  if(!boxMeasure){
+    err.classList.add("show"); err.textContent="Please enter the box measurements for shipping."; return;
+  }
+
+  // Address + collection date required for both payment types
+  const isCash   = S.valueType === "cash";
+  const isCredit = S.valueType === "credit";
+
+  const addr = isCash ? ge("tAddr").value.trim()       : ge("tCreditAddr").value.trim();
+  const date = isCash ? ge("tDate").value.trim()        : ge("tCreditDate").value.trim();
+  const bsb  = isCash ? ge("tBSB").value.trim()        : "";
+  const acct = isCash ? ge("tAcctNum").value.trim()     : "";
+
+  if(!addr || !date){
+    err.classList.add("show");
+    err.textContent="Please fill in your address and preferred courier collection date."; return;
+  }
+  if(isCash && (!bsb || !acct)){
+    err.classList.add("show");
+    err.textContent="For cash payment, please fill in your BSB and account number."; return;
+  }
+
+  err.classList.remove("show");
+
+  // ── Build cart clubs array ───────────────────────────────────
+  const clubs = cart.map(c => ({
+    clubType:     c.brand && c.model ? (c.type || S.type) : S.type,
+    brand:        c.brand,
+    model:        c.model,
+    condition:    c.cond,
+    condLabel:    c.condLabel,
+    ironConfig:   c.ironCfg || undefined,
+    missingClubs: c.missingClubs || [],
+    cashVal:      c.cashVal   || 0,
+    creditVal:    c.creditVal || 0,
+    notFound:     c.notFound  || false,
+  }));
+
+  const totalCash   = cart.reduce((s,c) => s + (c.cashVal   || 0), 0);
+  const totalCredit = cart.reduce((s,c) => s + (c.creditVal || 0), 0);
+
+  // ── Build full payload ───────────────────────────────────────
+  const payload = {
+    clubs,
+    paymentType:    S.valueType,
+    totalCash,
+    totalCredit,
+    memberCode:     S.memberCode   || undefined,
+    memberBonus:    S.memberBonus  || undefined,
+    customerName:   name,
+    customerEmail:  email,
+    customerPhone:  phone || undefined,
+    address:        addr,
+    collectionDate: date,
+    bsb:            isCash ? bsb  : undefined,
+    accountNumber:  isCash ? acct : undefined,
+    boxMeasurements: boxMeasure || undefined,
+  };
+
+  // ── Submit ───────────────────────────────────────────────────
+  submitBtn.textContent="Submitting…"; submitBtn.disabled=true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/tradein/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if(!res.ok || !data.success){
+      const msg = data.issues
+        ? data.issues.map(i => i.message).join(' · ')
+        : (data.error || 'Something went wrong. Please try again.');
+      err.classList.add("show"); err.textContent=msg;
+      return;
+    }
+
+    // ── Success ──────────────────────────────────────────────
+    // Store ref for success panel
+    ge("successRef").textContent = data.ref || '';
+    ge("s3Form").style.display="none";
+    ge("successPanel").style.display="block";
+    [1,2,3].forEach(i=>{
+      ge(`sc${i}`).classList.remove("active"); ge(`sc${i}`).classList.add("done");
+      ge(`sl${i}`).classList.remove("active"); ge(`sl${i}`).classList.add("done");
+    });
+    ge("ln1").classList.add("done"); ge("ln2").classList.add("done");
+
+  } catch(e) {
+    console.error('[submitTrade]', e);
+    err.classList.add("show");
+    err.textContent="Network error. Please check your connection and try again.";
+  } finally {
+    submitBtn.textContent="Submit Trade-In ✓"; submitBtn.disabled=false;
+  }
+}
+
+/* ── FULL RESET ── */
+function resetAll(){
+  S={type:"",brand:"",model:"",cond:"",condLabel:"",entry:null,missingClubs:[],
+     valueType:"credit",cashVal:0,creditVal:0,notFound:false,
+     memberCode:null,memberBonus:0,memberLabel:""};
+  cart=[]; cartIdSeq=0; missOn=false;
+
+  ge("clubType").value="";
+  rSel("brand","Select brand"); rSel("model","Select model");
+  document.querySelectorAll(".cond-card").forEach(c=>c.classList.remove("sel"));
+  ge("ironExtra").style.display="none";
+  ge("missTgl").classList.remove("on");
+  ge("missChipsWrap").classList.remove("show");
+  ge("missLbl").textContent="No — all clubs present";
+  ge("missChips").innerHTML="";
+  ["tName","tEmail","tPhone","tBoxMeasure","tAddr","tBSB","tAcctNum","tDate","tCreditAddr","tCreditDate"].forEach(id=>{
+    const el=ge(id); if(el) el.value="";
+  });
+  ge("s3Form").style.display="block";
+  ge("successPanel").style.display="none";
+  ge("vtCredit").classList.add("active");
+  ge("vtCash").classList.remove("active");
+  ge("codeInput").value="";
+  ge("codeFb").className="code-fb";
+  ge("codeBadge").classList.remove("show");
+  const cr=ge("creditBox"); if(cr) cr.classList.remove("show");
+  ge("cashBox").classList.remove("show");
+  ge("cartSection").classList.remove("show");
+  ge("addAnotherBtn").classList.remove("show");
+  ge("s1err").classList.remove("show");
+  ge("s3err").classList.remove("show");
+  goStep(1);
+}
+</script>
+</body>
+</html>
