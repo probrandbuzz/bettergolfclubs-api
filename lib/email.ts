@@ -33,6 +33,8 @@ interface SubRow {
   member_code?:   string | null;
   address?:       string | null;
   collection_date?: string | null;
+  discount_code?: string | null;
+  gift_card_code?: string | null;
 }
 
 // What submit.ts now passes to sendConfirmation / sendAdminAlert
