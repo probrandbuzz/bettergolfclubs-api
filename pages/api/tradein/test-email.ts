@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const config = {
     host:   process.env.SMTP_HOST,
-    port:   Number(process.env.SMTP_PORT) || 465,
+    port:   Number(process.env.SMTP_PORT) || 587,   // FIX: was 465, use 587 (STARTTLS)
     secure: process.env.SMTP_SECURE === 'true',
     auth: {
       user: process.env.SMTP_USER,
@@ -15,38 +15,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     },
   };
 
-  const to = req.query.to as string || process.env.ADMIN_ALERT_EMAIL;
+  const to = (req.query.to as string) || process.env.ADMIN_ALERT_EMAIL;
 
   try {
     const transporter = nodemailer.createTransport(config as any);
-    
-    // Verify connection first
     await transporter.verify();
-    
-    // Send test email
+
     const info = await transporter.sendMail({
-      from: `"Better Golf Clubs" <${process.env.EMAIL_FROM}>`,
+      from:    `"Better Golf Clubs" <${process.env.EMAIL_FROM}>`,
       to,
       subject: 'Test Email — Better Golf Clubs API',
-      html: `<p>SMTP is working correctly.</p>
-             <p>Host: ${config.host}</p>
-             <p>Port: ${config.port}</p>
-             <p>Secure: ${config.secure}</p>
-             <p>User: ${config.auth.user}</p>
-             <p>Sent at: ${new Date().toISOString()}</p>`,
+      html: `
+        <p>SMTP is working correctly.</p>
+        <p><b>Host:</b> ${config.host}</p>
+        <p><b>Port:</b> ${config.port}</p>
+        <p><b>Secure:</b> ${config.secure}</p>
+        <p><b>User:</b> ${config.auth.user}</p>
+        <p><b>Sent at:</b> ${new Date().toISOString()}</p>
+      `,
     });
 
     return res.status(200).json({
-      success: true,
+      success:   true,
       messageId: info.messageId,
-      config: { host: config.host, port: config.port, secure: config.secure, user: config.auth.user }
+      config:    { host: config.host, port: config.port, secure: config.secure, user: config.auth.user },
     });
   } catch (err: any) {
     return res.status(500).json({
       success: false,
-      error: err.message,
-      code: err.code,
-      config: { host: config.host, port: config.port, secure: config.secure, user: config.auth.user }
+      error:   err.message,
+      code:    err.code,
+      config:  { host: config.host, port: config.port, secure: config.secure, user: config.auth.user },
     });
   }
 }
