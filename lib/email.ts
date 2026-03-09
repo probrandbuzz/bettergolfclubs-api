@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 const FROM         = process.env.EMAIL_FROM         || 'tradein@bettergolfclubs.shop';
 const ADMIN_EMAIL  = process.env.ADMIN_ALERT_EMAIL  || 'admin@bettergolfclubs.shop';
 const ADMIN_URL    = process.env.ADMIN_PANEL_URL    || '';
-const STORE_URL    = process.env.STORE_URL          || 'https://bettergolfclubs.shop';
+const STORE_URL    = process.env.STORE_URL          || 'https://www.bettergolfclubs.shop';
 const GREEN        = '#124c33';
 const BRAND_NAME   = 'Better Golf Clubs';
 
@@ -280,7 +280,7 @@ export async function sendApprovalCredit(sub: SubRow, giftCardCode: string) {
     <div style="background:#f8f9fa;border-radius:10px;padding:18px;margin-bottom:24px">
       <strong style="color:#374151;font-size:13px">How to redeem:</strong>
       <ol style="color:#374151;font-size:13px;margin:8px 0 0;padding-left:18px;line-height:1.8">
-        <li>Shop at <a href="${STORE_URL}" style="color:${GREEN}">${STORE_URL.replace('https://', '')}</a></li>
+        <li>Shop at <a href="${STORE_URL}" style="color:${GREEN}">${STORE_URL}</a></li>
         <li>Proceed to checkout and find the gift card / discount field</li>
         <li>Enter <strong style="font-family:monospace">${giftCardCode}</strong></li>
         <li>Credit applies automatically — no expiry</li>
@@ -365,7 +365,7 @@ export async function sendShippingLabel(sub: SubRow, labelUrl: string) {
         <li>Wrap your club securely in bubble wrap or newspaper</li>
         <li>Place in a sturdy box (max <strong>120cm × 15cm × 15cm</strong>)</li>
         <li>Print and attach the label to the outside of the box</li>
-        <li>Drop off at any compatible courier location</li>
+        <li>Wait for courier collection or drop off at the booked courier local depot (if applicable)</li>
       </ol>
     </div>
 
@@ -537,7 +537,7 @@ export async function sendComplete(sub: SubRow) {
       <p style="color:#374151;font-size:13px;margin:6px 0 0">
         Thanks for trading in with ${BRAND_NAME}. We hope to see you again soon —
         check out our latest range at
-        <a href="${STORE_URL}" style="color:${GREEN}">${STORE_URL.replace('https://', '')}</a>.
+        <a href="${STORE_URL}" style="color:${GREEN}">${STORE_URL}</a>.
       </p>
     </div>
 
