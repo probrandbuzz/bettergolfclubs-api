@@ -11,6 +11,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
     "bcryptjs": "^2.4.3",
+    "formidable": "^3.5.4",
     "next": "14.2.5",
     "next-auth": "^4.24.7",
     "nodemailer": "^7.0.7",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/formidable": "^3.5.0",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.15",
     "@types/react": "^18",
