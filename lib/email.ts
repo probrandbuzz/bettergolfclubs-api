@@ -182,7 +182,7 @@ export async function sendConfirmation({ subs, paymentType, totalVal }: MultiSub
       <ol style="color:#374151;font-size:13px;margin:8px 0 0;padding-left:18px;line-height:1.8">
         <li>We verify your quote <em>(within 1 business day)</em></li>
         <li>A <strong>prepaid shipping label</strong> is emailed to you</li>
-        <li>Pack your ${isMulti ? 'clubs' : 'club'} and drop off at any courier location</li>
+        <li>Pack your ${isMulti ? 'clubs' : 'club'}, tape the shipping label, and wait for courier collection</li>
         <li>Once inspected, your ${isCredit ? 'store credit is issued' : 'payment is processed'}</li>
       </ol>
     </div>
@@ -233,7 +233,7 @@ export async function sendAdminAlert({ subs, paymentType, totalVal }: MultiSubPa
     </div>
 
     <div style="text-align:center;margin-bottom:8px">
-      <a href="${ADMIN_URL}/submissions/${first.id}"
+      <a href="${ADMIN_URL}?submission=${first.id}"
          style="display:inline-block;background:${GREEN};color:#fff;
                 padding:13px 32px;border-radius:8px;font-weight:700;
                 font-size:14px;text-decoration:none">
@@ -350,9 +350,12 @@ export async function sendShippingLabel(sub: SubRow, labelUrl: string) {
          style="display:inline-block;background:${GREEN};color:#fff;
                 padding:14px 36px;border-radius:8px;font-weight:700;
                 font-size:15px;text-decoration:none">
-        Download Shipping Label →
+        📄 Download Shipping Label (PDF) →
       </a>
     </div>
+    <p style="text-align:center;color:#6b7280;font-size:12px;margin:-20px 0 24px">
+      Click the button above to open or save your PDF shipping label.
+    </p>
 
     <div style="background:#f8f9fa;border-radius:10px;padding:18px;margin-bottom:24px">
       <strong style="color:#374151;font-size:13px;display:block;margin-bottom:10px">

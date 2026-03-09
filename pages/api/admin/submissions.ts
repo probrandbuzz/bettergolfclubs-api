@@ -9,11 +9,20 @@ export default withAdminAuth(async function handler(req, res) {
       status, paymentType, clubType,
       search, from, to,
       page = '1', limit = '25',
+      ref_code,
     } = req.query;
 
     let q = supabaseAdmin
       .from('trade_in_submissions')
       .select('id, ref_code, created_at, status, customer_name, customer_email, brand, model, condition, payment_type, quoted_cash, quoted_credit, member_code, club_type', { count: 'exact' });
+
+    // ref_code lookup — returns all clubs sharing a quote (used by admin modal grouping)
+    if (ref_code) {
+      q = q.eq('ref_code', ref_code as string);
+      const { data, error, count } = await q.order('created_at', { ascending: true });
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ submissions: data, total: count, page: 1, pages: 1 });
+    }
 
     if (status)      q = q.eq('status', status);
     if (paymentType) q = q.eq('payment_type', paymentType);
@@ -22,7 +31,7 @@ export default withAdminAuth(async function handler(req, res) {
     if (to)          q = q.lte('created_at', to as string);
     if (search) {
       q = q.or(
-        `customer_name.ilike.%${search}%,customer_email.ilike.%${search}%,brand.ilike.%${search}%,model.ilike.%${search}%`
+        `customer_name.ilike.%${search}%,customer_email.ilike.%${search}%,brand.ilike.%${search}%,model.ilike.%${search}%,ref_code.ilike.%${search}%`
       );
     }
 

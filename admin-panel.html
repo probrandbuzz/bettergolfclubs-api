@@ -1130,6 +1130,14 @@ function startApp() {
   }
 
   loadDashboard();
+
+  // Deep-link: if URL contains ?submission=<id>, open that submission
+  const params = new URLSearchParams(window.location.search);
+  const subId = params.get('submission');
+  if (subId) {
+    switchView('submissions');
+    openSubmission(subId);
+  }
 }
 
 // ── VIEW SWITCHING ─────────────────────────────────────────
@@ -1268,13 +1276,22 @@ async function openSubmission(id) {
 
   try {
     const s = await api('/api/admin/submission/' + id);
-    renderSubmission(s);
+    // Fetch sibling clubs with same ref_code
+    let siblings = [];
+    if (s.ref_code) {
+      try {
+        const all = await api('/api/admin/submissions?ref_code=' + encodeURIComponent(s.ref_code) + '&limit=50');
+        const list = all.submissions || all || [];
+        siblings = list.filter(r => r.id !== s.id);
+      } catch(e2) { /* non-fatal */ }
+    }
+    renderSubmission(s, siblings);
   } catch(e) {
     ge('subModalBody').innerHTML = `<div class="alert alert-danger">${escHtml(e.message)}</div>`;
   }
 }
 
-function renderSubmission(s) {
+function renderSubmission(s, siblings = []) {
   const ref = s.ref_code || s.id.slice(0,8).toUpperCase();
   ge('subModalTitle').textContent = `Submission ${ref}`;
 
@@ -1286,7 +1303,45 @@ function renderSubmission(s) {
       ${s.member_code ? `<span class="badge" style="background:var(--green-light);color:var(--green)">🎟 ${escHtml(s.member_code)}</span>` : ''}
     </div>
 
-    <div class="section-title">Club Details</div>
+    <div class="section-title">Club Details ${siblings.length > 0 ? `<span style="font-size:11px;font-weight:500;color:var(--muted);margin-left:6px">(${siblings.length + 1} clubs in this trade-in)</span>` : ''}</div>
+
+    ${ siblings.length > 0 ? `
+    <div style="background:#f8faf8;border:1.5px solid var(--green-light);border-radius:10px;overflow:hidden;margin-bottom:12px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--green);color:#fff">
+            <th style="padding:8px 12px;text-align:left;font-weight:600">Club</th>
+            <th style="padding:8px 12px;text-align:left;font-weight:600">Type</th>
+            <th style="padding:8px 12px;text-align:left;font-weight:600">Condition</th>
+            <th style="padding:8px 12px;text-align:right;font-weight:600">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fff;border-bottom:1px solid var(--border)">
+            <td style="padding:9px 12px;font-weight:600">${escHtml(s.brand)} ${escHtml(s.model)}</td>
+            <td style="padding:9px 12px;color:var(--muted)">${escHtml(s.club_type || '—')}</td>
+            <td style="padding:9px 12px">${condLabel(s.condition)}</td>
+            <td style="padding:9px 12px;text-align:right;font-weight:700;color:var(--green)">${val}</td>
+          </tr>
+          ${siblings.map(sib => {
+            const sibVal = sib.payment_type === 'credit' ? fmt(sib.quoted_credit) : fmt(sib.quoted_cash);
+            return `<tr style="background:#fff;border-bottom:1px solid var(--border)">
+              <td style="padding:9px 12px;font-weight:600">${escHtml(sib.brand)} ${escHtml(sib.model)}</td>
+              <td style="padding:9px 12px;color:var(--muted)">${escHtml(sib.club_type || '—')}</td>
+              <td style="padding:9px 12px">${condLabel(sib.condition)}</td>
+              <td style="padding:9px 12px;text-align:right;font-weight:700;color:var(--green)">${sibVal}</td>
+            </tr>`;
+          }).join('')}
+          <tr style="background:var(--green-bg)">
+            <td colspan="3" style="padding:9px 12px;font-weight:700">Combined Total</td>
+            <td style="padding:9px 12px;text-align:right;font-weight:800;color:var(--green);font-size:15px">
+              ${fmt([s, ...siblings].reduce((sum, r) => sum + (s.payment_type === 'credit' ? (r.quoted_credit||0) : (r.quoted_cash||0)), 0))}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    ` : `
     <div class="detail-grid">
       <div class="detail-row">
         <div class="detail-label">Club</div>
@@ -1307,6 +1362,8 @@ function renderSubmission(s) {
       ${s.iron_config ? `<div class="detail-row"><div class="detail-label">Iron Config</div><div class="detail-value">${escHtml(s.iron_config)}</div></div>` : ''}
       ${s.notes ? `<div class="detail-row"><div class="detail-label">Box Measurements</div><div class="detail-value">${escHtml(s.notes)}</div></div>` : ''}
     </div>
+    `}
+    ${s.notes ? `<div class="detail-grid" style="margin-top:8px"><div class="detail-row"><div class="detail-label">Box Measurements</div><div class="detail-value">${escHtml(s.notes)}</div></div></div>` : ''}
 
     <div class="section-title">Customer</div>
     <div class="detail-grid">
@@ -1403,10 +1460,15 @@ function buildActionBlock(s) {
   // Attach shipping label (approved or reviewing)
   if (s.status === 'approved' || s.status === 'reviewing' || s.status === 'pending') {
     html += `
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input class="form-input" id="labelUrl" placeholder="Shipping label URL" style="flex:1;min-width:200px">
-        <input class="form-input" id="trackingNum" placeholder="Tracking # (optional)" style="width:160px">
-        <button class="btn btn-secondary btn-sm" onclick="attachLabel('${id}')">📦 Attach Label</button>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label style="font-size:12px;font-weight:600;color:var(--muted)">📦 Attach Shipping Label (PDF)</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="file" id="labelFile" accept=".pdf,application/pdf"
+            style="flex:1;min-width:200px;font-size:13px;padding:7px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer">
+          <input class="form-input" id="trackingNum" placeholder="Tracking # (optional)" style="width:160px">
+          <button class="btn btn-secondary btn-sm" onclick="attachLabel('${id}')">📦 Attach Label</button>
+        </div>
+        <div id="labelUploadStatus" style="font-size:12px;color:var(--muted)"></div>
       </div>`;
   }
 
@@ -1465,18 +1527,43 @@ async function rejectSubmission(id) {
 }
 
 async function attachLabel(id) {
-  const url  = ge('labelUrl')?.value.trim();
-  const num  = ge('trackingNum')?.value.trim();
-  if (!url) { toast('Please enter a label URL', 'error'); return; }
+  const fileInput = ge('labelFile');
+  const num       = ge('trackingNum')?.value.trim();
+  const statusEl  = ge('labelUploadStatus');
+
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+    toast('Please select a PDF file to upload', 'error'); return;
+  }
+
+  const file = fileInput.files[0];
+  if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+    toast('Please select a valid PDF file', 'error'); return;
+  }
+
+  statusEl.textContent = 'Uploading PDF…';
+
   try {
-    await api('/api/admin/submission/' + id, {
-      method: 'PATCH',
-      body: JSON.stringify({ action: 'attach-label', id, shippingLabelUrl: url, trackingNumber: num || undefined }),
+    // Upload PDF via multipart form to our API
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('id', id);
+    if (num) formData.append('trackingNumber', num);
+
+    const res = await fetch(API + '/api/admin/submission/' + id + '/upload-label', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SESSION?.token },
+      body: formData,
     });
-    toast('Label attached & email sent to customer', 'success');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+    toast('Label uploaded & email sent to customer', 'success');
     closeModal('subModal');
     loadSubmissions(); loadDashboard();
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) {
+    statusEl.textContent = 'Upload failed: ' + e.message;
+    toast(e.message, 'error');
+  }
 }
 
 // ── PRICING ────────────────────────────────────────────────
@@ -1510,6 +1597,7 @@ function renderPricing(rows) {
       <td>
         <button class="btn btn-secondary btn-sm" onclick="openPricingModal(${JSON.stringify(p).split('"').join('&quot;')})">Edit</button>
         ${p.active ? `<button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deactivatePricing('${p.id}')">Deactivate</button>` : ''}
+        <button class="btn btn-danger btn-sm" style="margin-left:4px;opacity:.7" onclick="deletePricing('${p.id}','${p.brand} ${p.model}')">Delete</button>
       </td>
     </tr>
   `).join('');
@@ -1576,6 +1664,15 @@ async function deactivatePricing(id) {
   try {
     await api('/api/admin/pricing?id=' + id, { method: 'DELETE' });
     toast('Deactivated', 'success');
+    loadPricing();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deletePricing(id, name) {
+  if (!confirm('Permanently DELETE "' + name + '"? This cannot be undone.')) return;
+  try {
+    await api('/api/admin/pricing?id=' + id + '&action=delete', { method: 'DELETE' });
+    toast('Deleted permanently', 'success');
     loadPricing();
   } catch(e) { toast(e.message, 'error'); }
 }
