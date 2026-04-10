@@ -1,11 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '../../../lib/supabase';
+
+// No cache — pricing must always reflect latest database state
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Allow calculator to fetch this from any origin (Shopify, admin panel, etc.)
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const { data, error } = await supabaseAdmin
@@ -19,8 +18,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Failed to load pricing' });
   }
 
-  // Transform flat rows into the shape the calculator expects:
-  // { types: string[], brands: Record<type, string[]>, models: Record<"type|brand", entry[]> }
+  // Transform into the same shape the calculator JS uses:
+  // { types[], brands{}, models{} }
   const typesSet = new Set<string>();
   const brands: Record<string, Set<string>> = {};
   const models: Record<string, Array<{
@@ -35,11 +34,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const key = `${row.club_type}|${row.brand}`;
     if (!models[key]) models[key] = [];
     models[key].push({
-      model:     row.model,
-      new:       Number(row.price_new),
-      above_avg: Number(row.price_above_avg),
-      avg:       Number(row.price_avg),
-      below_avg: Number(row.price_below_avg),
+      model:      row.model,
+      new:        row.price_new,
+      above_avg:  row.price_above_avg,
+      avg:        row.price_avg,
+      below_avg:  row.price_below_avg,
     });
   }
 
@@ -51,7 +50,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     models,
   };
 
-  // No caching -- every request hits Supabase so admin changes are immediately live
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   return res.status(200).json(result);
 }
