@@ -7,15 +7,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { data, error } = await supabaseAdmin
-    .from('trade_in_pricing')
-    .select('club_type, brand, model, price_new, price_above_avg, price_avg, price_below_avg')
-    .eq('active', true)
-    .order('club_type').order('brand').order('model');
+  // Fetch all rows in pages to bypass Supabase's default 1000-row limit
+  const PAGE = 1000;
+  let allRows: any[] = [];
+  let from = 0;
+  let keepGoing = true;
 
-  if (error) {
-    console.error('[pricing] Supabase error:', error);
-    return res.status(500).json({ error: 'Failed to load pricing' });
+  while (keepGoing) {
+    const { data, error } = await supabaseAdmin
+      .from('trade_in_pricing')
+      .select('club_type, brand, model, price_new, price_above_avg, price_avg, price_below_avg')
+      .eq('active', true)
+      .order('club_type').order('brand').order('model')
+      .range(from, from + PAGE - 1);
+
+    if (error) {
+      console.error('[pricing] Supabase error:', error);
+      return res.status(500).json({ error: 'Failed to load pricing' });
+    }
+
+    allRows = allRows.concat(data);
+    keepGoing = data.length === PAGE;
+    from += PAGE;
   }
 
   // Transform into the same shape the calculator JS uses:
@@ -26,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     model: string; new: number; above_avg: number; avg: number; below_avg: number;
   }>> = {};
 
-  for (const row of data) {
+  for (const row of allRows) {
     typesSet.add(row.club_type);
     if (!brands[row.club_type]) brands[row.club_type] = new Set();
     brands[row.club_type].add(row.brand);
